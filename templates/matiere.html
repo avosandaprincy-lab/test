@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ligne_echeance %}
+{% block titre %}{{ matiere.nom }}{% endblock %}
+
+{% block contenu %}
+{% set ici = url_for('matiere', matiere_id=matiere.id) %}
+
+<div class="titre-matiere" style="--couleur: {{ matiere.couleur }}">
+  <div>
+    <h1>{{ matiere.nom }}</h1>
+    {% if matiere.enseignant %}<p class="sous-titre">Enseignant·e : {{ matiere.enseignant }}</p>{% endif %}
+  </div>
+  <details class="reglages">
+    <summary class="bouton secondaire">Modifier</summary>
+    <form method="post" action="{{ url_for('modifier_matiere', matiere_id=matiere.id) }}" class="formulaire">
+      <label>Nom <input name="nom" value="{{ matiere.nom }}" required></label>
+      <label>Enseignant·e <input name="enseignant" value="{{ matiere.enseignant or '' }}"></label>
+      <label>Couleur <input type="color" name="couleur" value="{{ matiere.couleur }}"></label>
+      <button class="bouton">Enregistrer</button>
+    </form>
+    <form method="post" action="{{ url_for('supprimer_matiere', matiere_id=matiere.id) }}"
+          onsubmit="return confirm('Supprimer cette matière ET toutes ses notes, fichiers et échéances ?')">
+      <button class="bouton danger">Supprimer la matière</button>
+    </form>
+  </details>
+</div>
+
+<div class="deux-colonnes">
+  {# ---------------- Colonne de gauche : les notes de cours ---------------- #}
+  <section class="bloc" id="notes">
+    <h2>Notes de cours</h2>
+    <details class="ajout" {% if not notes %}open{% endif %}>
+      <summary class="bouton">+ Nouvelle note</summary>
+      <form method="post" action="{{ url_for('ajouter_note', matiere_id=matiere.id) }}" class="formulaire">
+        <div class="en-ligne">
+          <label>Date <input type="date" name="date" value="{{ aujourd_hui }}" required></label>
+          <label class="large">Titre <input name="titre" required placeholder="ex. Chapitre 2 — Les institutions"></label>
+        </div>
+        <label>Contenu <textarea name="contenu" rows="8" placeholder="Tes notes…"></textarea></label>
+        <button class="bouton">Ajouter la note</button>
+      </form>
+    </details>
+
+    {% for n in notes %}
+      <article class="note">
+        <header>
+          <span class="note-date">{{ n.date|date_fr }}</span>
+          <h3>{{ n.titre }}</h3>
+          <span class="actions">
+            <a class="bouton-icone" href="{{ url_for('modifier_note', note_id=n.id) }}" title="Modifier">✏️</a>
+            <form method="post" action="{{ url_for('supprimer_note', note_id=n.id) }}" onsubmit="return confirm('Supprimer cette note ?')">
+              <button class="bouton-icone" title="Supprimer">🗑</button>
+            </form>
+          </span>
+        </header>
+        {% if n.contenu %}<div class="note-contenu">{{ n.contenu }}</div>{% endif %}
+      </article>
+    {% else %}
+      <p class="vide">Pas encore de note pour cette matière.</p>
+    {% endfor %}
+  </section>
+
+  {# ---------------- Colonne de droite : fichiers + échéances ---------------- #}
+  <div>
+    <section class="bloc" id="fichiers">
+      <h2>Fichiers</h2>
+      <form method="post" action="{{ url_for('ajouter_fichier', matiere_id=matiere.id) }}" enctype="multipart/form-data" class="formulaire">
+        <input type="file" name="fichiers" multiple required>
+        <button class="bouton">Joindre</button>
+      </form>
+      {% if fichiers %}
+        <ul class="liste-fichiers">
+          {% for f in fichiers %}
+            <li>
+              <a href="{{ url_for('ouvrir_fichier', fichier_id=f.id) }}" target="_blank">📄 {{ f.nom_original }}</a>
+              <form method="post" action="{{ url_for('supprimer_fichier', fichier_id=f.id) }}" onsubmit="return confirm('Supprimer ce fichier ?')">
+                <button class="bouton-icone" title="Supprimer">🗑</button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="vide">Aucun fichier joint.</p>
+      {% endif %}
+    </section>
+
+    <section class="bloc" id="echeances">
+      <h2>Échéances</h2>
+      <form method="post" action="{{ url_for('echeances') }}" class="formulaire">
+        <input type="hidden" name="matiere_id" value="{{ matiere.id }}">
+        <input type="hidden" name="retour" value="{{ ici }}#echeances">
+        <input name="titre" required placeholder="ex. Dissertation n°1">
+        <div class="en-ligne">
+          <select name="type">{% for t in types %}<option>{{ t }}</option>{% endfor %}</select>
+          <input type="date" name="date" required>
+          <button class="bouton">Ajouter</button>
+        </div>
+      </form>
+      {% if echeances %}
+        <ul class="liste-echeances compacte">
+          {% for e in echeances %}{{ ligne_echeance(e, ici ~ '#echeances', afficher_matiere=false) }}{% endfor %}
+        </ul>
+      {% else %}
+        <p class="vide">Aucune échéance.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

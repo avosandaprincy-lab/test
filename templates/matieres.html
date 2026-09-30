@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_macros.html" import carte_matiere %}
+{% block titre %}Matières{% endblock %}
+
+{% block contenu %}
+<h1>Matières</h1>
+
+<section class="bloc">
+  <h2>Nouvelle matière</h2>
+  <form method="post" class="formulaire en-ligne">
+    <label>Nom <input name="nom" required placeholder="ex. Droit constitutionnel"></label>
+    <label>Enseignant·e <input name="enseignant" placeholder="ex. Mme Martin"></label>
+    <label>Couleur <input type="color" name="couleur" value="#4f7cff"></label>
+    <button class="bouton">Créer</button>
+  </form>
+</section>
+
+<section class="bloc">
+  <h2>Toutes mes matières</h2>
+  {% if matieres %}
+    <div class="grille-matieres">
+      {% for m in matieres %}{{ carte_matiere(m) }}{% endfor %}
+    </div>
+  {% else %}
+    <p class="vide">Aucune matière pour l'instant. Utilise le formulaire ci-dessus.</p>
+  {% endif %}
+</section>
+{% endblock %}

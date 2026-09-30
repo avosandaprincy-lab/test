@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ligne_echeance %}
+{% block titre %}Échéances{% endblock %}
+
+{% block contenu %}
+{% set ici = url_for('echeances') %}
+<h1>Échéances</h1>
+
+<section class="bloc">
+  <h2>Nouvelle échéance</h2>
+  <form method="post" class="formulaire en-ligne">
+    <label class="large">Titre <input name="titre" required placeholder="ex. Partiel de mi-semestre"></label>
+    <label>Type <select name="type">{% for t in types %}<option>{{ t }}</option>{% endfor %}</select></label>
+    <label>Date <input type="date" name="date" required min="{{ aujourd_hui }}"></label>
+    <label>Matière
+      <select name="matiere_id">
+        <option value="">— aucune —</option>
+        {% for m in matieres %}<option value="{{ m.id }}">{{ m.nom }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="bouton">Ajouter</button>
+  </form>
+</section>
+
+{% if en_retard %}
+<section class="bloc" id="retard">
+  <h2>⚠ Dépassées (non cochées)</h2>
+  <ul class="liste-echeances">
+    {% for e in en_retard %}{{ ligne_echeance(e, ici) }}{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="bloc">
+  <h2>À venir</h2>
+  {% if a_venir %}
+    <ul class="liste-echeances">
+      {% for e in a_venir %}{{ ligne_echeance(e, ici) }}{% endfor %}
+    </ul>
+  {% else %}
+    <p class="vide">Rien à l'horizon. 🎉</p>
+  {% endif %}
+</section>
+
+{% if faites %}
+<section class="bloc">
+  <details>
+    <summary><h2 class="en-ligne-titre">Terminées ({{ faites|length }})</h2></summary>
+    <ul class="liste-echeances">
+      {% for e in faites %}{{ ligne_echeance(e, ici) }}{% endfor %}
+    </ul>
+  </details>
+</section>
+{% endif %}
+{% endblock %}

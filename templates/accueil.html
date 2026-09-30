@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ligne_echeance, carte_matiere %}
+{% block titre %}Accueil{% endblock %}
+
+{% block contenu %}
+<h1>Bonjour 👋</h1>
+
+<section class="bloc">
+  <div class="bloc-entete">
+    <h2>Prochaines échéances</h2>
+    <a href="{{ url_for('echeances') }}">Tout voir →</a>
+  </div>
+  {% if en_retard %}
+    <p class="alerte">⚠ Tu as {{ en_retard }} échéance{{ 's' if en_retard > 1 }} dépassée{{ 's' if en_retard > 1 }} non cochée{{ 's' if en_retard > 1 }}.
+      <a href="{{ url_for('echeances') }}#retard">Voir</a></p>
+  {% endif %}
+  {% if prochaines %}
+    <ul class="liste-echeances">
+      {% for e in prochaines %}{{ ligne_echeance(e, url_for('accueil')) }}{% endfor %}
+    </ul>
+  {% else %}
+    <p class="vide">Aucune échéance à venir. 🎉 <a href="{{ url_for('echeances') }}">Ajouter une échéance</a></p>
+  {% endif %}
+</section>
+
+<section class="bloc">
+  <div class="bloc-entete">
+    <h2>Mes matières</h2>
+    <a href="{{ url_for('matieres') }}">Gérer →</a>
+  </div>
+  {% if matieres %}
+    <div class="grille-matieres">
+      {% for m in matieres %}{{ carte_matiere(m) }}{% endfor %}
+    </div>
+  {% else %}
+    <p class="vide">Tu n'as pas encore de matière. <a href="{{ url_for('matieres') }}">Crée ta première matière</a> pour commencer.</p>
+  {% endif %}
+</section>
+{% endblock %}

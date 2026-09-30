@@ -1,0 +1,35 @@
+{# Morceaux de page réutilisés à plusieurs endroits #}
+
+{# Une ligne d'échéance : case à cocher, date, titre, matière, bouton supprimer #}
+{% macro ligne_echeance(e, retour, afficher_matiere=true) %}
+<li class="echeance {{ '' if not e.faite else 'faite' }} {{ e.date|urgence if not e.faite else '' }}">
+  <form method="post" action="{{ url_for('basculer_echeance', echeance_id=e.id) }}">
+    <input type="hidden" name="retour" value="{{ retour }}">
+    <button class="case" title="{{ 'Marquer comme à faire' if e.faite else 'Marquer comme faite' }}">{{ '✔' if e.faite else '' }}</button>
+  </form>
+  <div class="echeance-date">
+    <strong>{{ e.date|date_fr }}</strong>
+    {% if not e.faite %}<span class="relatif">{{ e.date|dans }}</span>{% endif %}
+  </div>
+  <div class="echeance-infos">
+    <span class="badge-type">{{ e.type }}</span>
+    <span class="echeance-titre">{{ e.titre }}</span>
+    {% if afficher_matiere and e.matiere_nom %}
+      <a class="pastille" style="--couleur: {{ e.matiere_couleur }}" href="{{ url_for('matiere', matiere_id=e.matiere_id) }}">{{ e.matiere_nom }}</a>
+    {% endif %}
+  </div>
+  <form method="post" action="{{ url_for('supprimer_echeance', echeance_id=e.id) }}" onsubmit="return confirm('Supprimer cette échéance ?')">
+    <input type="hidden" name="retour" value="{{ retour }}">
+    <button class="bouton-icone" title="Supprimer">🗑</button>
+  </form>
+</li>
+{% endmacro %}
+
+{# Carte d'une matière (utilisée sur l'accueil et la page Matières) #}
+{% macro carte_matiere(m) %}
+<a class="carte-matiere" style="--couleur: {{ m.couleur }}" href="{{ url_for('matiere', matiere_id=m.id) }}">
+  <span class="carte-nom">{{ m.nom }}</span>
+  {% if m.enseignant %}<span class="carte-prof">{{ m.enseignant }}</span>{% endif %}
+  <span class="carte-stats">{{ m.nb_notes }} note{{ 's' if m.nb_notes != 1 }} · {{ m.nb_fichiers }} fichier{{ 's' if m.nb_fichiers != 1 }}</span>
+</a>
+{% endmacro %}

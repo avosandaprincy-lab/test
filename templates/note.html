@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titre %}Modifier la note{% endblock %}
+
+{% block contenu %}
+<p><a href="{{ url_for('matiere', matiere_id=matiere.id) }}#notes">← Retour à {{ matiere.nom }}</a></p>
+<h1>Modifier la note</h1>
+<section class="bloc">
+  <form method="post" class="formulaire">
+    <div class="en-ligne">
+      <label>Date <input type="date" name="date" value="{{ note.date }}" required></label>
+      <label class="large">Titre <input name="titre" value="{{ note.titre }}" required></label>
+    </div>
+    <label>Contenu <textarea name="contenu" rows="18">{{ note.contenu or '' }}</textarea></label>
+    <button class="bouton">Enregistrer</button>
+  </form>
+</section>
+{% endblock %}

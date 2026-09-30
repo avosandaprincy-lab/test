@@ -1,0 +1,9 @@
+# Tes données personnelles (base + fichiers) restent sur ton ordinateur,
+# on ne les envoie pas sur GitHub.
+donnees/
+
+# Fichiers techniques de Python
+__pycache__/
+*.pyc
+.venv/
+venv/

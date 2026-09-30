@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block titre %}Oups{% endblock %}
+{% block contenu %}
+<h1>Oups…</h1>
+<p>{{ message }}</p>
+<p><a href="{{ url_for('accueil') }}">← Retour à l'accueil</a></p>
+{% endblock %}
