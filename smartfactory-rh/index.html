@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f3d5e" />
   <title>SmartFactory RH</title>
+  <meta name="description" content="Intranet RH de SmartFactory : actualités, FAQ, boîte à idées, sondages, annuaire RH et guides." />
+
+  <!-- Icônes et installation sur l'écran d'accueil (dossier images/) -->
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png" />
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="SF RH" />
+
+  <!-- Aperçu lors d'un partage de lien (Teams, WhatsApp, LinkedIn…) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SmartFactory RH" />
+  <meta property="og:description" content="Votre espace salarié, partout, sur mobile." />
+  <meta property="og:image" content="images/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
 
   <!-- Tailwind CSS via CDN (aucune compilation nécessaire) -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -56,7 +72,7 @@
 <header class="sticky top-0 z-30 bg-brand-700 text-white shadow-md">
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
     <div class="flex items-center gap-3">
-      <div class="grid h-10 w-10 place-items-center rounded-xl bg-white/15 text-xl">🏭</div>
+      <img src="images/logo.svg" alt="SmartFactory" width="40" height="40" class="h-10 w-10 rounded-xl" />
       <div>
         <p class="text-lg font-extrabold leading-tight">SmartFactory <span class="text-accent-400">RH</span></p>
         <p class="text-xs text-white/70" id="header-subtitle">Votre espace salarié</p>
@@ -82,7 +98,8 @@
 
     <!-- ---------- 1. ACTUALITÉS ---------- -->
     <section data-view="news" class="view fade-in">
-      <div class="mb-4 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-900 p-5 text-white shadow">
+      <div class="relative mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-900 p-5 text-white shadow">
+        <img src="images/hero-usine.svg" alt="" class="pointer-events-none absolute -right-6 bottom-0 w-72 max-w-[70%] sm:w-96" />
         <p class="text-sm text-white/80" id="greeting">Bonjour Camille 👋</p>
         <h1 class="mt-1 text-2xl font-extrabold">Fil d'actualités RH</h1>
         <p class="mt-1 text-sm text-white/80">Toute l'info du siège, des sites et du télétravail, au même endroit.</p>
@@ -271,28 +288,28 @@ const NEWS_CATEGORIES = [
 ];
 
 const NEWS = [
-  { id: 1, cat: 'policy', title: 'Nouvel accord télétravail : jusqu\'à 2 jours par semaine', date: '2026-10-02', emoji: '🏠', readTime: 4,
+  { id: 1, cat: 'policy', title: 'Nouvel accord télétravail : jusqu\'à 2 jours par semaine', date: '2026-10-02', emoji: '🏠', img: 'images/news/teletravail.svg', readTime: 4,
     excerpt: 'Signé avec les partenaires sociaux, l\'accord entre en vigueur le 1er novembre pour les postes éligibles du siège et des fonctions support.',
     body: 'L\'accord prévoit jusqu\'à 2 jours de télétravail par semaine pour les postes éligibles, une indemnité forfaitaire de 2,70 € par jour télétravaillé et un kit ergonomique (écran, siège) à commander via le portail achats. Les demandes se font auprès de votre manager dans l\'application, rubrique « Mes demandes ».' },
-  { id: 2, cat: 'sites', title: 'Lyon-Vénissieux : la ligne 4 passe en production autonome', date: '2026-09-29', emoji: '🤖', readTime: 3,
+  { id: 2, cat: 'sites', title: 'Lyon-Vénissieux : la ligne 4 passe en production autonome', date: '2026-09-29', emoji: '🤖', img: 'images/news/ligne-cobots.svg', readTime: 3,
     excerpt: 'Après 6 mois de montée en compétence, les équipes de la ligne 4 pilotent désormais les cobots en autonomie complète.',
     body: '42 opérateurs et techniciens ont été formés au pilotage des cobots grâce au programme « Smart Skills ». Bravo à l\'équipe de Karim Benali pour ce démarrage sans aucun accident ! Une visite de la ligne est organisée le 15 octobre pour les salariés des autres sites (inscription auprès de votre RRH).' },
-  { id: 3, cat: 'life', title: 'SmartRun 2026 : 1 200 inscrits pour la course solidaire', date: '2026-09-25', emoji: '🏃', readTime: 2,
+  { id: 3, cat: 'life', title: 'SmartRun 2026 : 1 200 inscrits pour la course solidaire', date: '2026-09-25', emoji: '🏃', img: 'images/news/smartrun.svg', readTime: 2,
     excerpt: 'Record battu ! Chaque kilomètre parcouru reverse 1 € à l\'association Les Restos du Cœur.',
     body: 'La course se déroule simultanément sur les 5 sites le samedi 18 octobre. Parcours de 5 et 10 km, marche de 3 km accessible à tous. Les t-shirts sont à retirer à l\'accueil de votre site à partir du 13 octobre.' },
-  { id: 4, cat: 'policy', title: 'Entretiens annuels : la campagne 2026 démarre le 3 novembre', date: '2026-09-22', emoji: '🗓️', readTime: 5,
+  { id: 4, cat: 'policy', title: 'Entretiens annuels : la campagne 2026 démarre le 3 novembre', date: '2026-09-22', emoji: '🗓️', img: 'images/news/entretiens.svg', readTime: 5,
     excerpt: 'Nouveau format plus court, centré sur les compétences et les souhaits de mobilité. Tutoriel disponible dans l\'espace Guides.',
     body: 'Le formulaire passe de 12 à 6 rubriques. L\'auto-évaluation se remplit directement depuis votre téléphone. Les managers de proximité en atelier disposeront de créneaux dédiés pour réaliser les entretiens pendant le temps de travail.' },
-  { id: 5, cat: 'sites', title: 'Valenciennes obtient la certification ISO 45001', date: '2026-09-18', emoji: '🦺', readTime: 2,
+  { id: 5, cat: 'sites', title: 'Valenciennes obtient la certification ISO 45001', date: '2026-09-18', emoji: '🦺', img: 'images/news/iso-45001.svg', readTime: 2,
     excerpt: 'Une reconnaissance de l\'engagement de tous en matière de santé et de sécurité au travail : 400 jours sans accident avec arrêt.',
     body: 'L\'audit a souligné la qualité des « quarts d\'heure sécurité » quotidiens et l\'implication des équipes de nuit. Un moment de convivialité sera organisé sur site le 10 octobre pour toutes les équipes.' },
-  { id: 6, cat: 'life', title: 'Bienvenue aux 85 alternants de la promotion 2026 !', date: '2026-09-12', emoji: '🎓', readTime: 3,
+  { id: 6, cat: 'life', title: 'Bienvenue aux 85 alternants de la promotion 2026 !', date: '2026-09-12', emoji: '🎓', img: 'images/news/alternants.svg', readTime: 3,
     excerpt: 'Maintenance, qualité, data, RH : nos alternants rejoignent les 5 sites pour 1 à 3 ans.',
     body: 'Chaque alternant est accompagné d\'un tuteur formé. Si vous souhaitez devenir tuteur pour la promotion 2027, la formation de 2 jours est ouverte aux inscriptions dans le catalogue formation.' },
-  { id: 7, cat: 'policy', title: 'Mutuelle : nouvelles garanties optique et dentaire au 1er janvier', date: '2026-09-05', emoji: '🩺', readTime: 4,
+  { id: 7, cat: 'policy', title: 'Mutuelle : nouvelles garanties optique et dentaire au 1er janvier', date: '2026-09-05', emoji: '🩺', img: 'images/news/mutuelle.svg', readTime: 4,
     excerpt: 'Meilleure prise en charge des implants et des lentilles, sans hausse de cotisation pour les salariés.',
     body: 'Le forfait optique passe à 350 € tous les 2 ans et le forfait implantaire à 600 € par an. Le tableau de garanties complet est disponible auprès de votre RRH ou dans l\'application de l\'assureur.' },
-  { id: 8, cat: 'sites', title: 'Toulouse : nouvel espace de restauration ouvert 24h/24', date: '2026-08-28', emoji: '🍽️', readTime: 2,
+  { id: 8, cat: 'sites', title: 'Toulouse : nouvel espace de restauration ouvert 24h/24', date: '2026-08-28', emoji: '🍽️', img: 'images/news/restauration.svg', readTime: 2,
     excerpt: 'Pensé pour les équipes en 3x8, l\'espace propose des repas chauds à toute heure.',
     body: 'Le nouvel espace dispose de distributeurs de plats frais renouvelés deux fois par jour et d\'une salle de repos de 40 places. Le paiement se fait avec votre badge, avec la même participation employeur que le restaurant d\'entreprise.' }
 ];
@@ -444,7 +461,10 @@ const News = {
       const liked = !!this.likes[n.id];
       return `
       <article data-article="${n.id}" tabindex="0" class="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
-        <div class="flex h-28 items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 text-5xl">${n.emoji}</div>
+        <div class="relative grid h-36 place-items-center overflow-hidden bg-gradient-to-br from-brand-50 to-brand-100 text-5xl">
+          ${n.emoji}
+          ${n.img ? `<img src="${n.img}" alt="" loading="lazy" onerror="this.remove()" class="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105" />` : ''}
+        </div>
         <div class="p-4">
           <div class="mb-2 flex items-center justify-between gap-2 text-xs">
             <span class="rounded-full px-2.5 py-1 font-semibold ${c.color}">${c.label}</span>
@@ -473,7 +493,10 @@ const News = {
     const n = NEWS.find(x => x.id === id);
     const c = this.catOf(n.cat);
     Modal.open(`
-      <div class="flex h-40 items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50 text-7xl">${n.emoji}</div>
+      <div class="relative grid h-48 place-items-center overflow-hidden bg-gradient-to-br from-brand-100 to-brand-50 text-7xl">
+        ${n.emoji}
+        ${n.img ? `<img src="${n.img}" alt="" onerror="this.remove()" class="absolute inset-0 h-full w-full object-cover" />` : ''}
+      </div>
       <div class="p-6">
         <span class="rounded-full px-2.5 py-1 text-xs font-semibold ${c.color}">${c.label}</span>
         <h2 class="mt-3 text-xl font-extrabold">${n.title}</h2>

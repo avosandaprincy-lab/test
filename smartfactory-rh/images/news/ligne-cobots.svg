@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5a524"/><stop offset="1" stop-color="#b45309"/></linearGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="2" fill="#fff" fill-opacity=".12"/></pattern>
+  </defs>
+  <rect width="800" height="400" fill="url(#bg)"/>
+  <rect width="800" height="400" fill="url(#dots)"/>
+  <circle cx="90" cy="340" r="150" fill="#fff" fill-opacity=".07"/>
+  <circle cx="720" cy="60" r="120" fill="#fff" fill-opacity=".08"/>
+  <circle cx="400" cy="215" r="135" fill="#fff" fill-opacity=".12"/>
+  <g fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+
+    <path d="M300 320 H420" />
+    <path d="M360 320 V230 L455 165" />
+    <circle cx="360" cy="230" r="16" fill="#fff" fill-opacity=".35"/>
+    <circle cx="455" cy="165" r="16" fill="#fff" fill-opacity=".35"/>
+    <path d="M470 150 L505 140 M470 180 L505 190" />
+    <rect x="440" y="265" width="150" height="26" rx="13" />
+    <rect x="490" y="225" width="44" height="40" rx="6" fill="#fff" fill-opacity=".3"/>
+  </g>
+</svg>

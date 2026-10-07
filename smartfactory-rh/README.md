@@ -21,5 +21,45 @@ Navigation : barre d'onglets en bas sur mobile, menu latéral à partir de 768 p
 Toutes les données factices sont regroupées dans la section `2. DONNÉES FACTICES` du script (`NEWS`, `FAQ`, `DIRECTORY`, `POLL`, `GUIDES`, `CHATBOT`…).
 Les votes, idées et notes sont enregistrés dans le `localStorage` du navigateur (objet `Store`). Pour brancher un vrai back-end, remplacez `Store.get` / `Store.set` par des appels API.
 
-## Déploiement
-Fichier statique : à déposer tel quel sur Netlify, GitHub Pages, SharePoint, un serveur web interne, etc.
+## Contenu du dossier
+```
+smartfactory-rh/
+├── index.html               ← l'application
+├── manifest.webmanifest     ← installation sur l'écran d'accueil du téléphone
+├── netlify.toml             ← configuration Netlify de ce site
+└── images/
+    ├── logo.svg / favicon.svg          ← logo (en-tête + onglet du navigateur)
+    ├── icon-192.png / icon-512.png     ← icônes Android / Chrome
+    ├── icon-maskable-512.png           ← icône Android adaptative
+    ├── apple-touch-icon.png            ← icône iPhone / iPad
+    ├── og-image.png                    ← aperçu quand le lien est partagé (Teams, WhatsApp…)
+    ├── hero-usine.svg                  ← décor du bandeau d'accueil
+    └── news/*.svg                      ← illustrations des 8 actualités
+```
+**Uploadez le dossier entier** : `index.html` cherche les images dans `images/`, à côté de lui.
+
+## Remplacer les images
+- **Photo d'actualité** : déposez la photo dans `images/news/` (JPG ou WebP, environ 800×400 px, moins de 200 Ko), puis changez le champ `img` de l'article dans `NEWS` : `img: 'images/news/ma-photo.jpg'`. Si une image manque, l'emoji de l'article s'affiche à la place.
+- **Nouvel article sans image** : supprimez simplement le champ `img`.
+- **Logo** : remplacez `images/logo.svg` et `images/favicon.svg` en gardant les mêmes noms (format carré). Remplacez aussi les PNG (192, 512 et 180 px) pour les téléphones.
+
+## Héberger la page
+### Option 1 : GitHub Pages (gratuit)
+1. Fusionnez la branche dans `main`.
+2. Sur GitHub : **Settings → Pages → Source : Deploy from a branch → `main` / `/ (root)` → Save**.
+3. Après 1 à 2 minutes, la page est en ligne : `https://<compte>.github.io/<depot>/smartfactory-rh/`.
+
+GitHub Pages gratuit nécessite un dépôt **public**. Pour un intranet, préférez un dépôt privé avec un hébergement protégé (option 2 ou 3).
+
+### Option 2 : Netlify
+1. Netlify → **Add new site → Import an existing project** → choisissez ce dépôt.
+2. **Base directory** : `smartfactory-rh` (Netlify lit alors `smartfactory-rh/netlify.toml`). Laissez la commande de build vide.
+3. **Deploy**. Pour restreindre l'accès aux salariés, activez la protection par mot de passe ou l'authentification dans les réglages du site.
+
+Le `netlify.toml` à la racine du dépôt publie le site Miguel Automatismes. Ne le modifiez pas : créez un **second site** Netlify pour SmartFactory RH.
+
+### Option 3 : serveur interne / SharePoint
+Copiez le dossier `smartfactory-rh/` tel quel sur n'importe quel serveur web. Aucune configuration n'est nécessaire.
+
+### Après la mise en ligne
+Pour que l'aperçu fonctionne quand on partage le lien, remplacez dans `index.html` `content="images/og-image.png"` par l'adresse complète, par exemple `content="https://votre-site.netlify.app/images/og-image.png"`. Teams, WhatsApp et LinkedIn exigent une adresse complète.
