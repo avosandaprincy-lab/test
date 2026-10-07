@@ -1,0 +1,4 @@
+# Netlify publie uniquement le site de demonstration Miguel Automatismes
+[build]
+  publish = "miguel-site"
+  command = ""
