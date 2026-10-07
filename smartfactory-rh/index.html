@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f3d5e" />
+  <title>SmartFactory RH</title>
+
+  <!-- Tailwind CSS via CDN (aucune compilation nécessaire) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Garde-fou : si le CDN est bloqué (proxy d'entreprise), la page reste fonctionnelle
+    if (window.tailwind) tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eef6fb', 100: '#d6e9f5', 500: '#1a6fa3', 600: '#155d8a', 700: '#0f3d5e', 900: '#0a2840' },
+            accent: { 400: '#ffb347', 500: '#f59e0b' }
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* Petites finitions qui ne sont pas couvertes par les classes utilitaires */
+    body { -webkit-tap-highlight-color: transparent; }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    .fade-in { animation: fadeIn .25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .accordion-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
+    .accordion-body > div { overflow: hidden; }
+    .accordion-item.open .accordion-body { grid-template-rows: 1fr; }
+    .accordion-item.open .chevron { transform: rotate(180deg); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { scrollbar-width: none; }
+    mark { background: #fde68a; padding: 0 2px; border-radius: 3px; }
+  </style>
+</head>
+
+<body class="bg-slate-100 font-sans text-slate-800 antialiased">
+
+<!-- =====================================================================
+     STRUCTURE GÉNÉRALE
+     - Header (mobile + desktop)
+     - Sidebar de navigation (desktop ≥ md)
+     - Zone de contenu : une <section data-view="..."> par onglet
+     - Bottom Navigation Bar (mobile < md)
+     - Widget Chatbot flottant
+     ===================================================================== -->
+
+<!-- ===== HEADER ===== -->
+<header class="sticky top-0 z-30 bg-brand-700 text-white shadow-md">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+    <div class="flex items-center gap-3">
+      <div class="grid h-10 w-10 place-items-center rounded-xl bg-white/15 text-xl">🏭</div>
+      <div>
+        <p class="text-lg font-extrabold leading-tight">SmartFactory <span class="text-accent-400">RH</span></p>
+        <p class="text-xs text-white/70" id="header-subtitle">Votre espace salarié</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden text-right sm:block">
+        <p class="text-sm font-semibold">Camille Martin</p>
+        <p class="text-xs text-white/70">Technicienne maintenance · Lyon</p>
+      </div>
+      <div class="grid h-10 w-10 place-items-center rounded-full bg-accent-500 font-bold text-brand-900">CM</div>
+    </div>
+  </div>
+</header>
+
+<div class="mx-auto flex max-w-6xl gap-6 px-4 md:py-6">
+
+  <!-- ===== SIDEBAR DESKTOP ===== -->
+  <nav class="sticky top-24 hidden h-fit w-56 shrink-0 flex-col gap-1 rounded-2xl bg-white p-3 shadow-sm md:flex" id="side-nav" aria-label="Navigation principale"></nav>
+
+  <!-- ===== CONTENU ===== -->
+  <main class="min-w-0 flex-1 pb-28 pt-4 md:pb-10 md:pt-0">
+
+    <!-- ---------- 1. ACTUALITÉS ---------- -->
+    <section data-view="news" class="view fade-in">
+      <div class="mb-4 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-900 p-5 text-white shadow">
+        <p class="text-sm text-white/80" id="greeting">Bonjour Camille 👋</p>
+        <h1 class="mt-1 text-2xl font-extrabold">Fil d'actualités RH</h1>
+        <p class="mt-1 text-sm text-white/80">Toute l'info du siège, des sites et du télétravail, au même endroit.</p>
+      </div>
+
+      <!-- Filtres catégories (scroll horizontal sur mobile) -->
+      <div class="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4" id="news-filters"></div>
+
+      <div class="grid gap-4 sm:grid-cols-2" id="news-list"></div>
+    </section>
+
+    <!-- ---------- 2. FAQ ---------- -->
+    <section data-view="faq" class="view hidden fade-in">
+      <h1 class="mb-1 text-2xl font-extrabold text-brand-700">FAQ RH</h1>
+      <p class="mb-4 text-sm text-slate-500">Les réponses aux questions les plus posées au service RH.</p>
+
+      <label class="relative mb-3 block">
+        <span class="sr-only">Rechercher dans la FAQ</span>
+        <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+        <input id="faq-search" type="search" placeholder="Ex : congés, mutuelle, fiche de paie…"
+               class="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base shadow-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+      </label>
+      <p class="mb-3 text-xs text-slate-500" id="faq-count"></p>
+      <div class="space-y-3" id="faq-list"></div>
+    </section>
+
+    <!-- ---------- 3. IDÉES & SONDAGE ---------- -->
+    <section data-view="ideas" class="view hidden fade-in">
+      <h1 class="mb-1 text-2xl font-extrabold text-brand-700">Participer</h1>
+      <p class="mb-4 text-sm text-slate-500">Boîte à idées, sondage du moment et baromètre d'engagement.</p>
+
+      <div class="grid gap-4 lg:grid-cols-2">
+        <!-- Baromètre eNPS -->
+        <div class="rounded-2xl bg-white p-5 shadow-sm lg:col-span-2" id="enps-card"></div>
+
+        <!-- Sondage -->
+        <div class="rounded-2xl bg-white p-5 shadow-sm" id="poll-card"></div>
+
+        <!-- Formulaire boîte à idées -->
+        <form id="idea-form" class="rounded-2xl bg-white p-5 shadow-sm">
+          <h2 class="text-lg font-bold">💡 Proposer une idée</h2>
+          <p class="mb-4 text-sm text-slate-500">Une amélioration pour votre site, votre équipe, votre quotidien ?</p>
+          <label class="mb-3 block">
+            <span class="mb-1 block text-sm font-medium">Titre</span>
+            <input name="title" required maxlength="80" placeholder="Ex : Casiers connectés au vestiaire"
+                   class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+          </label>
+          <label class="mb-3 block">
+            <span class="mb-1 block text-sm font-medium">Description</span>
+            <textarea name="desc" required maxlength="400" rows="3" placeholder="Décrivez votre idée en quelques lignes"
+                      class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></textarea>
+          </label>
+          <label class="mb-4 block">
+            <span class="mb-1 block text-sm font-medium">Thème</span>
+            <select name="theme" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
+              <option>Qualité de vie au travail</option>
+              <option>Sécurité</option>
+              <option>Environnement</option>
+              <option>Organisation</option>
+              <option>Outils numériques</option>
+            </select>
+          </label>
+          <button class="w-full rounded-xl bg-brand-600 py-3.5 text-base font-semibold text-white shadow hover:bg-brand-700 active:scale-[.99]">Envoyer mon idée</button>
+        </form>
+
+        <!-- Liste des idées -->
+        <div class="lg:col-span-2">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-lg font-bold">Idées des collègues</h2>
+            <select id="idea-sort" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+              <option value="votes">Les plus votées</option>
+              <option value="recent">Les plus récentes</option>
+            </select>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2" id="idea-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 4. ANNUAIRE ---------- -->
+    <section data-view="directory" class="view hidden fade-in">
+      <h1 class="mb-1 text-2xl font-extrabold text-brand-700">Annuaire RH</h1>
+      <p class="mb-4 text-sm text-slate-500">Trouvez le bon interlocuteur, sur votre site ou au siège.</p>
+
+      <div class="mb-4 grid gap-3 sm:grid-cols-3">
+        <input id="dir-search" type="search" placeholder="Nom ou rôle…"
+               class="rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+        <select id="dir-site" class="rounded-xl border border-slate-200 bg-white px-4 py-3"></select>
+        <select id="dir-domain" class="rounded-xl border border-slate-200 bg-white px-4 py-3"></select>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="dir-list"></div>
+    </section>
+
+    <!-- ---------- 5. CONDUITE DU CHANGEMENT ---------- -->
+    <section data-view="guides" class="view hidden fade-in">
+      <h1 class="mb-1 text-2xl font-extrabold text-brand-700">Conduite du changement</h1>
+      <p class="mb-4 text-sm text-slate-500">Guides et tutoriels pour prendre en main vos nouveaux outils.</p>
+
+      <div class="mb-5 rounded-2xl bg-white p-5 shadow-sm" id="guides-progress"></div>
+      <div class="grid gap-4 sm:grid-cols-2" id="guides-list"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== BOTTOM NAVIGATION (mobile) ===== -->
+<nav class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden" aria-label="Navigation mobile">
+  <ul class="grid grid-cols-5" id="bottom-nav"></ul>
+</nav>
+
+<!-- ===== MODALE ARTICLE ===== -->
+<div id="modal" class="fixed inset-0 z-50 hidden items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true">
+  <div class="fade-in max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white sm:rounded-3xl" id="modal-content"></div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast" class="pointer-events-none fixed left-1/2 top-20 z-[60] -translate-x-1/2 rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white opacity-0 shadow-lg transition-opacity"></div>
+
+<!-- ===== CHATBOT RH ===== -->
+<button id="chat-toggle" aria-label="Ouvrir l'assistant RH"
+        class="fixed bottom-24 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-accent-500 text-2xl shadow-xl hover:scale-105 md:bottom-6 md:right-6">💬</button>
+
+<div id="chat-panel" class="fixed inset-x-2 bottom-24 z-40 hidden flex-col overflow-hidden rounded-3xl bg-white shadow-2xl sm:inset-x-auto sm:right-6 sm:w-96 md:bottom-24" style="max-height: min(70vh, 560px);">
+  <div class="flex items-center justify-between bg-brand-700 px-4 py-3 text-white">
+    <div class="flex items-center gap-2">
+      <span class="grid h-9 w-9 place-items-center rounded-full bg-white/15">🤖</span>
+      <div><p class="font-semibold leading-tight">Léa, assistante RH</p><p class="text-xs text-white/70">Réponse immédiate · 24h/24</p></div>
+    </div>
+    <button id="chat-close" class="grid h-10 w-10 place-items-center rounded-full hover:bg-white/10" aria-label="Fermer">✕</button>
+  </div>
+  <div id="chat-messages" class="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4"></div>
+  <div class="no-scrollbar flex gap-2 overflow-x-auto border-t border-slate-100 px-3 pt-3" id="chat-suggestions"></div>
+  <form id="chat-form" class="flex gap-2 p-3">
+    <input id="chat-input" autocomplete="off" placeholder="Posez votre question…" class="min-w-0 flex-1 rounded-full border border-slate-200 px-4 py-3 outline-none focus:border-brand-500" />
+    <button class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-600 text-white" aria-label="Envoyer">➤</button>
+  </form>
+</div>
+
+<script>
+/* =======================================================================
+   SmartFactory RH — Application monopage (vanilla JS)
+   Organisation :
+     1. Utilitaires (stockage local, échappement HTML, toast)
+     2. Données factices (MOCK DATA)
+     3. Navigation (onglets / bottom bar)
+     4. Modules : Actualités, FAQ, Idées, Sondage, eNPS, Annuaire, Guides, Chatbot
+     5. Initialisation
+   Les interactions (votes, idées, eNPS…) sont mémorisées dans le
+   localStorage du navigateur pour la démo. En production, remplacer
+   les fonctions Store.get / Store.set par des appels API.
+   ======================================================================= */
+
+/* ---------- 1. UTILITAIRES ---------- */
+const Store = {
+  prefix: 'sf-rh:',
+  get(key, fallback) {
+    try { const v = localStorage.getItem(this.prefix + key); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(this.prefix + key, JSON.stringify(value)); } catch { /* stockage indisponible : la démo reste fonctionnelle en mémoire */ }
+  }
+};
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const normalize = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const formatDate = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (el.style.opacity = '0'), 2200);
+}
+
+/* ---------- 2. DONNÉES FACTICES ---------- */
+const SITES = ['Siège – Paris La Défense', 'Usine de Lyon-Vénissieux', 'Usine de Valenciennes', 'Usine de Toulouse', 'Plateforme logistique Orléans'];
+
+const NEWS_CATEGORIES = [
+  { id: 'all', label: 'Tout', icon: '📰' },
+  { id: 'policy', label: 'Politiques RH', icon: '📋', color: 'bg-sky-100 text-sky-800' },
+  { id: 'life', label: "Vie d'entreprise", icon: '🎉', color: 'bg-emerald-100 text-emerald-800' },
+  { id: 'sites', label: 'Sites de production', icon: '🏭', color: 'bg-amber-100 text-amber-800' }
+];
+
+const NEWS = [
+  { id: 1, cat: 'policy', title: 'Nouvel accord télétravail : jusqu\'à 2 jours par semaine', date: '2026-10-02', emoji: '🏠', readTime: 4,
+    excerpt: 'Signé avec les partenaires sociaux, l\'accord entre en vigueur le 1er novembre pour les postes éligibles du siège et des fonctions support.',
+    body: 'L\'accord prévoit jusqu\'à 2 jours de télétravail par semaine pour les postes éligibles, une indemnité forfaitaire de 2,70 € par jour télétravaillé et un kit ergonomique (écran, siège) à commander via le portail achats. Les demandes se font auprès de votre manager dans l\'application, rubrique « Mes demandes ».' },
+  { id: 2, cat: 'sites', title: 'Lyon-Vénissieux : la ligne 4 passe en production autonome', date: '2026-09-29', emoji: '🤖', readTime: 3,
+    excerpt: 'Après 6 mois de montée en compétence, les équipes de la ligne 4 pilotent désormais les cobots en autonomie complète.',
+    body: '42 opérateurs et techniciens ont été formés au pilotage des cobots grâce au programme « Smart Skills ». Bravo à l\'équipe de Karim Benali pour ce démarrage sans aucun accident ! Une visite de la ligne est organisée le 15 octobre pour les salariés des autres sites (inscription auprès de votre RRH).' },
+  { id: 3, cat: 'life', title: 'SmartRun 2026 : 1 200 inscrits pour la course solidaire', date: '2026-09-25', emoji: '🏃', readTime: 2,
+    excerpt: 'Record battu ! Chaque kilomètre parcouru reverse 1 € à l\'association Les Restos du Cœur.',
+    body: 'La course se déroule simultanément sur les 5 sites le samedi 18 octobre. Parcours de 5 et 10 km, marche de 3 km accessible à tous. Les t-shirts sont à retirer à l\'accueil de votre site à partir du 13 octobre.' },
+  { id: 4, cat: 'policy', title: 'Entretiens annuels : la campagne 2026 démarre le 3 novembre', date: '2026-09-22', emoji: '🗓️', readTime: 5,
+    excerpt: 'Nouveau format plus court, centré sur les compétences et les souhaits de mobilité. Tutoriel disponible dans l\'espace Guides.',
+    body: 'Le formulaire passe de 12 à 6 rubriques. L\'auto-évaluation se remplit directement depuis votre téléphone. Les managers de proximité en atelier disposeront de créneaux dédiés pour réaliser les entretiens pendant le temps de travail.' },
+  { id: 5, cat: 'sites', title: 'Valenciennes obtient la certification ISO 45001', date: '2026-09-18', emoji: '🦺', readTime: 2,
+    excerpt: 'Une reconnaissance de l\'engagement de tous en matière de santé et de sécurité au travail : 400 jours sans accident avec arrêt.',
+    body: 'L\'audit a souligné la qualité des « quarts d\'heure sécurité » quotidiens et l\'implication des équipes de nuit. Un moment de convivialité sera organisé sur site le 10 octobre pour toutes les équipes.' },
+  { id: 6, cat: 'life', title: 'Bienvenue aux 85 alternants de la promotion 2026 !', date: '2026-09-12', emoji: '🎓', readTime: 3,
+    excerpt: 'Maintenance, qualité, data, RH : nos alternants rejoignent les 5 sites pour 1 à 3 ans.',
+    body: 'Chaque alternant est accompagné d\'un tuteur formé. Si vous souhaitez devenir tuteur pour la promotion 2027, la formation de 2 jours est ouverte aux inscriptions dans le catalogue formation.' },
+  { id: 7, cat: 'policy', title: 'Mutuelle : nouvelles garanties optique et dentaire au 1er janvier', date: '2026-09-05', emoji: '🩺', readTime: 4,
+    excerpt: 'Meilleure prise en charge des implants et des lentilles, sans hausse de cotisation pour les salariés.',
+    body: 'Le forfait optique passe à 350 € tous les 2 ans et le forfait implantaire à 600 € par an. Le tableau de garanties complet est disponible auprès de votre RRH ou dans l\'application de l\'assureur.' },
+  { id: 8, cat: 'sites', title: 'Toulouse : nouvel espace de restauration ouvert 24h/24', date: '2026-08-28', emoji: '🍽️', readTime: 2,
+    excerpt: 'Pensé pour les équipes en 3x8, l\'espace propose des repas chauds à toute heure.',
+    body: 'Le nouvel espace dispose de distributeurs de plats frais renouvelés deux fois par jour et d\'une salle de repos de 40 places. Le paiement se fait avec votre badge, avec la même participation employeur que le restaurant d\'entreprise.' }
+];
+
+const FAQ = [
+  { cat: 'Congés', q: 'Comment poser un jour de congé ?', a: 'Depuis l\'onglet « Mes demandes » de l\'application ou la borne RH de votre site. Votre manager reçoit une notification et valide sous 72 h. Pour les postes en équipe, posez vos congés au moins 15 jours avant pour faciliter la planification.' },
+  { cat: 'Congés', q: 'Combien de jours de RTT ai-je par an ?', a: 'Les cadres au forfait jours bénéficient de 11 jours de RTT en 2026. Les non-cadres à 37h hebdomadaires acquièrent 12 jours. Le solde est visible sur votre bulletin de paie et dans l\'application.' },
+  { cat: 'Paie', q: 'Quand la paie est-elle versée ?', a: 'Le salaire est versé le dernier jour ouvré du mois. Votre bulletin de paie dématérialisé est disponible dans votre coffre-fort numérique 2 jours avant le virement.' },
+  { cat: 'Paie', q: 'Comment sont payées les heures supplémentaires et de nuit ?', a: 'Les heures supplémentaires sont majorées de 25 % (8 premières heures) puis 50 %. Le travail de nuit (21h–6h) ouvre droit à une majoration de 20 % et à une prime de panier. Elles apparaissent sur le bulletin du mois suivant.' },
+  { cat: 'Mutuelle', q: 'Comment ajouter mon conjoint ou mes enfants à la mutuelle ?', a: 'Envoyez une copie du livret de famille ou du PACS à votre RRH. L\'ajout prend effet le 1er jour du mois suivant. La cotisation famille est prise en charge à 60 % par SmartFactory.' },
+  { cat: 'Mutuelle', q: 'Puis-je être dispensé de la mutuelle d\'entreprise ?', a: 'Oui, si vous êtes déjà couvert par la mutuelle obligatoire de votre conjoint, ou en CDD de moins de 12 mois. Un formulaire de dispense est à remplir auprès du service RH.' },
+  { cat: 'Télétravail', q: 'Mon poste est-il éligible au télétravail ?', a: 'Les postes dont les activités peuvent être réalisées à distance au moins 1 jour par semaine sont éligibles (siège, fonctions support, bureaux d\'études). Les postes en atelier ne sont pas éligibles mais bénéficient de jours de flexibilité horaire.' },
+  { cat: 'Formation', q: 'Comment utiliser mon CPF chez SmartFactory ?', a: 'Vous pouvez mobiliser votre CPF sur moncompteformation.gouv.fr. SmartFactory peut abonder votre CPF pour les formations certifiantes en lien avec votre métier : faites la demande lors de votre entretien annuel.' },
+  { cat: 'Sécurité', q: 'Que faire en cas d\'accident du travail ?', a: 'Prévenez immédiatement votre chef d\'équipe et rendez-vous à l\'infirmerie du site. L\'accident doit être déclaré dans les 24 h. Le service RH vous accompagne pour les démarches auprès de la CPAM.' },
+  { cat: 'Mobilité', q: 'Comment postuler à une offre interne ?', a: 'Toutes les offres sont publiées dans la Bourse de l\'emploi interne 15 jours avant toute diffusion externe. Informez votre manager, puis postulez en un clic depuis l\'application.' }
+];
+
+const DIRECTORY = [
+  { name: 'Sophie Lambert', role: 'DRH Groupe', site: SITES[0], domain: 'Direction RH', phone: '01 47 20 10 00', email: 'sophie.lambert@smartfactory.fr', color: 'bg-rose-500' },
+  { name: 'Thomas Nguyen', role: 'Responsable Paie & Rémunération', site: SITES[0], domain: 'Paie', phone: '01 47 20 10 12', email: 'thomas.nguyen@smartfactory.fr', color: 'bg-sky-500' },
+  { name: 'Nadia Haddad', role: 'Chargée avantages sociaux', site: SITES[0], domain: 'Mutuelle & prévoyance', phone: '01 47 20 10 18', email: 'nadia.haddad@smartfactory.fr', color: 'bg-violet-500' },
+  { name: 'Karim Benali', role: 'RRH de site', site: SITES[1], domain: 'Relations salariés', phone: '04 72 50 30 01', email: 'karim.benali@smartfactory.fr', color: 'bg-emerald-500' },
+  { name: 'Julie Moreau', role: 'Chargée de formation', site: SITES[1], domain: 'Formation', phone: '04 72 50 30 07', email: 'julie.moreau@smartfactory.fr', color: 'bg-amber-500' },
+  { name: 'Marc Delattre', role: 'RRH de site', site: SITES[2], domain: 'Relations salariés', phone: '03 27 40 22 10', email: 'marc.delattre@smartfactory.fr', color: 'bg-teal-500' },
+  { name: 'Aurélie Petit', role: 'Infirmière santé au travail', site: SITES[2], domain: 'Santé & sécurité', phone: '03 27 40 22 15', email: 'aurelie.petit@smartfactory.fr', color: 'bg-pink-500' },
+  { name: 'Lucas Fernandez', role: 'RRH de site', site: SITES[3], domain: 'Relations salariés', phone: '05 61 30 44 02', email: 'lucas.fernandez@smartfactory.fr', color: 'bg-indigo-500' },
+  { name: 'Inès Rousseau', role: 'Chargée recrutement & mobilité', site: SITES[3], domain: 'Recrutement & mobilité', phone: '05 61 30 44 09', email: 'ines.rousseau@smartfactory.fr', color: 'bg-orange-500' },
+  { name: 'Pierre Garnier', role: 'Gestionnaire administration du personnel', site: SITES[4], domain: 'Paie', phone: '02 38 60 11 03', email: 'pierre.garnier@smartfactory.fr', color: 'bg-cyan-600' },
+  { name: 'Fatou Diallo', role: 'Référente QVT & handicap', site: SITES[4], domain: 'Santé & sécurité', phone: '02 38 60 11 08', email: 'fatou.diallo@smartfactory.fr', color: 'bg-lime-600' },
+  { name: 'Antoine Leroy', role: 'Chef de projet transformation RH', site: SITES[0], domain: 'Conduite du changement', phone: '01 47 20 10 25', email: 'antoine.leroy@smartfactory.fr', color: 'bg-slate-600' }
+];
+
+const DEFAULT_IDEAS = [
+  { id: 1, title: 'Navette entre la gare et l\'usine de Valenciennes', desc: 'Une navette aux heures de prise de poste (5h30, 13h30, 21h30) éviterait 20 min de marche de nuit.', theme: 'Qualité de vie au travail', author: 'Équipe de nuit L2', votes: 128, date: '2026-09-20' },
+  { id: 2, title: 'Récupérer la chaleur des fours pour chauffer l\'atelier', desc: 'Les fours de traitement thermique rejettent beaucoup de chaleur : on pourrait l\'utiliser pour l\'atelier B en hiver.', theme: 'Environnement', author: 'Hugo, maintenance Toulouse', votes: 94, date: '2026-09-14' },
+  { id: 3, title: 'Tablettes partagées en salle de pause', desc: 'Pour que les opérateurs sans poste fixe puissent consulter leurs bulletins et poser leurs congés facilement.', theme: 'Outils numériques', author: 'Sarah, opératrice Lyon', votes: 76, date: '2026-09-28' },
+  { id: 4, title: 'Marquage au sol phosphorescent dans les allées', desc: 'Pour améliorer la visibilité en cas de coupure de courant dans l\'entrepôt.', theme: 'Sécurité', author: 'Logistique Orléans', votes: 51, date: '2026-10-01' }
+];
+
+const POLL = {
+  id: 'poll-2026-10',
+  question: 'Quel nouvel avantage souhaiteriez-vous en priorité en 2027 ?',
+  options: [
+    { id: 'velo', label: '🚲 Forfait mobilités durables (vélo, covoiturage)', votes: 412 },
+    { id: 'creche', label: '👶 Places en crèche partenaire', votes: 268 },
+    { id: 'sport', label: '🏋️ Abonnement salle de sport', votes: 355 },
+    { id: 'conciergerie', label: '🛎️ Conciergerie d\'entreprise sur site', votes: 189 }
+  ],
+  closes: '2026-10-31'
+};
+
+const GUIDES = [
+  { id: 'g1', emoji: '📱', title: 'Prendre en main l\'application RH', level: 'Débutant', duration: '5 min', type: 'Tutoriel',
+    steps: ['Téléchargez l\'application ou ouvrez-la depuis votre navigateur', 'Connectez-vous avec votre matricule et le code reçu par SMS', 'Ajoutez l\'application à votre écran d\'accueil', 'Activez les notifications pour ne rien manquer'] },
+  { id: 'g2', emoji: '🗓️', title: 'Poser ses congés en 3 clics', level: 'Débutant', duration: '3 min', type: 'Tutoriel',
+    steps: ['Ouvrez « Mes demandes » puis « Nouvelle absence »', 'Choisissez le type (CP, RTT, récupération) et les dates', 'Validez : votre manager est notifié automatiquement'] },
+  { id: 'g3', emoji: '💶', title: 'Comprendre son bulletin de paie dématérialisé', level: 'Intermédiaire', duration: '8 min', type: 'Guide',
+    steps: ['Accédez à votre coffre-fort numérique', 'Identifiez les 4 blocs : salaire brut, cotisations, net à payer, net imposable', 'Retrouvez vos compteurs de congés et RTT en bas du bulletin', 'Téléchargez vos bulletins à tout moment, même après un départ'] },
+  { id: 'g4', emoji: '🎯', title: 'Préparer son entretien annuel', level: 'Intermédiaire', duration: '10 min', type: 'Guide',
+    steps: ['Relisez vos objectifs de l\'année écoulée', 'Remplissez l\'auto-évaluation depuis votre téléphone', 'Notez vos souhaits de formation et de mobilité', 'Échangez avec votre manager lors du rendez-vous'] },
+  { id: 'g5', emoji: '🧑‍🏫', title: 'Manager : accompagner son équipe dans le changement', level: 'Manager', duration: '15 min', type: 'Kit manager',
+    steps: ['Expliquez le « pourquoi » du changement en réunion d\'équipe', 'Identifiez des ambassadeurs dans l\'équipe', 'Organisez une démo de 15 min au quart d\'heure sécurité', 'Remontez les questions via la boîte à idées'] },
+  { id: 'g6', emoji: '🔐', title: 'Sécuriser son compte et ses données', level: 'Débutant', duration: '4 min', type: 'Tutoriel',
+    steps: ['Activez la double authentification', 'Ne partagez jamais votre code SMS', 'Signalez tout e-mail suspect au service informatique'] }
+];
+
+const CHATBOT = [
+  { keys: ['conge', 'cp', 'vacance', 'absence', 'rtt'], label: '🏖️ Mes congés',
+    answer: 'Vous disposez de <b>25 jours de congés payés</b> par an (+ RTT selon votre statut). Pour poser un congé : onglet « Mes demandes » → « Nouvelle absence ». Votre manager valide sous 72 h. Votre solde actuel : <b>14,5 jours CP</b> et <b>6 jours RTT</b>.' },
+  { keys: ['paie', 'salaire', 'bulletin', 'virement', 'fiche'], label: '💶 Ma paie',
+    answer: 'Le salaire est versé le <b>dernier jour ouvré du mois</b>. Votre bulletin est disponible 2 jours avant dans votre coffre-fort numérique. Pour une question précise, contactez <b>Thomas Nguyen</b> (Paie) au 01 47 20 10 12.' },
+  { keys: ['mutuelle', 'sante', 'remboursement', 'prevoyance', 'optique', 'dentaire'], label: '🩺 Ma mutuelle',
+    answer: 'La mutuelle est prise en charge à <b>60 % par SmartFactory</b>. Nouveautés au 1er janvier : forfait optique à 350 € et implants à 600 €/an. Pour ajouter un ayant droit, envoyez un justificatif à votre RRH.' },
+  { keys: ['teletravail', 'remote', 'domicile', 'maison'], label: '🏠 Télétravail',
+    answer: 'Le nouvel accord permet jusqu\'à <b>2 jours de télétravail par semaine</b> pour les postes éligibles, avec une indemnité de 2,70 €/jour. La demande se fait auprès de votre manager dans l\'application.' }
+];
+
+/* ---------- 3. NAVIGATION ---------- */
+const TABS = [
+  { id: 'news', label: 'Actus', full: 'Actualités', icon: '📰' },
+  { id: 'faq', label: 'FAQ', full: 'FAQ RH', icon: '❓' },
+  { id: 'ideas', label: 'Participer', full: 'Idées & sondages', icon: '💡' },
+  { id: 'directory', label: 'Annuaire', full: 'Annuaire RH', icon: '👥' },
+  { id: 'guides', label: 'Guides', full: 'Conduite du changement', icon: '🧭' }
+];
+
+function renderNav() {
+  $('#bottom-nav').innerHTML = TABS.map(t => `
+    <li><button data-tab="${t.id}" class="nav-btn flex w-full flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium text-slate-500">
+      <span class="grid h-8 w-12 place-items-center rounded-full text-xl transition-colors">${t.icon}</span>${t.label}
+    </button></li>`).join('');
+
+  $('#side-nav').innerHTML = TABS.map(t => `
+    <button data-tab="${t.id}" class="nav-btn flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-600 hover:bg-slate-100">
+      <span class="text-lg">${t.icon}</span>${t.full}
+    </button>`).join('');
+
+  document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+}
+
+function showTab(id) {
+  if (!TABS.some(t => t.id === id)) id = 'news';
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.dataset.view !== id));
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    const active = b.dataset.tab === id;
+    b.classList.toggle('text-brand-700', active);
+    b.classList.toggle('font-semibold', active);
+    // Desktop : fond coloré ; mobile : pastille autour de l'icône
+    if (b.closest('#side-nav')) b.classList.toggle('bg-brand-50', active);
+    const pill = b.querySelector('span.rounded-full');
+    if (pill) pill.classList.toggle('bg-brand-100', active);
+  });
+  $('#header-subtitle').textContent = TABS.find(t => t.id === id).full;
+  if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- 4a. ACTUALITÉS ---------- */
+const News = {
+  filter: 'all',
+  likes: Store.get('news-likes', {}),
+
+  init() {
+    $('#news-filters').innerHTML = NEWS_CATEGORIES.map(c => `
+      <button data-cat="${c.id}" class="news-filter shrink-0 rounded-full border px-4 py-2.5 text-sm font-medium transition">${c.icon} ${c.label}</button>`).join('');
+    $('#news-filters').addEventListener('click', e => {
+      const b = e.target.closest('[data-cat]');
+      if (b) { this.filter = b.dataset.cat; this.render(); }
+    });
+    $('#news-list').addEventListener('click', e => {
+      const like = e.target.closest('[data-like]');
+      if (like) { e.stopPropagation(); return this.toggleLike(+like.dataset.like); }
+      const card = e.target.closest('[data-article]');
+      if (card) this.open(+card.dataset.article);
+    });
+    this.render();
+  },
+
+  catOf(id) { return NEWS_CATEGORIES.find(c => c.id === id); },
+
+  render() {
+    document.querySelectorAll('.news-filter').forEach(b => {
+      const active = b.dataset.cat === this.filter;
+      b.className = `news-filter shrink-0 rounded-full border px-4 py-2.5 text-sm font-medium transition ${active ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-brand-500'}`;
+    });
+    const items = NEWS.filter(n => this.filter === 'all' || n.cat === this.filter);
+    $('#news-list').innerHTML = items.map(n => {
+      const c = this.catOf(n.cat);
+      const liked = !!this.likes[n.id];
+      return `
+      <article data-article="${n.id}" tabindex="0" class="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
+        <div class="flex h-28 items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 text-5xl">${n.emoji}</div>
+        <div class="p-4">
+          <div class="mb-2 flex items-center justify-between gap-2 text-xs">
+            <span class="rounded-full px-2.5 py-1 font-semibold ${c.color}">${c.label}</span>
+            <span class="text-slate-400">${formatDate(n.date)} · ${n.readTime} min</span>
+          </div>
+          <h3 class="mb-1 font-bold leading-snug group-hover:text-brand-600">${n.title}</h3>
+          <p class="line-clamp-2 text-sm text-slate-500">${n.excerpt}</p>
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-sm font-semibold text-brand-600">Lire la suite →</span>
+            <button data-like="${n.id}" class="flex min-h-[40px] items-center gap-1 rounded-full px-3 text-sm ${liked ? 'bg-rose-50 text-rose-600' : 'text-slate-400 hover:bg-slate-100'}">
+              ${liked ? '❤️' : '🤍'} <span>${12 + n.id * 7 + (liked ? 1 : 0)}</span>
+            </button>
+          </div>
+        </div>
+      </article>`;
+    }).join('');
+  },
+
+  toggleLike(id) {
+    this.likes[id] = !this.likes[id];
+    Store.set('news-likes', this.likes);
+    this.render();
+  },
+
+  open(id) {
+    const n = NEWS.find(x => x.id === id);
+    const c = this.catOf(n.cat);
+    Modal.open(`
+      <div class="flex h-40 items-center justify-center bg-gradient-to-br from-brand-100 to-brand-50 text-7xl">${n.emoji}</div>
+      <div class="p-6">
+        <span class="rounded-full px-2.5 py-1 text-xs font-semibold ${c.color}">${c.label}</span>
+        <h2 class="mt-3 text-xl font-extrabold">${n.title}</h2>
+        <p class="mt-1 text-xs text-slate-400">Publié le ${formatDate(n.date)} · ${n.readTime} min de lecture</p>
+        <p class="mt-4 font-medium text-slate-700">${n.excerpt}</p>
+        <p class="mt-3 leading-relaxed text-slate-600">${n.body}</p>
+        <button data-close class="mt-6 w-full rounded-xl bg-brand-600 py-3.5 font-semibold text-white">Fermer</button>
+      </div>`);
+  }
+};
+
+/* ---------- Modale générique ---------- */
+const Modal = {
+  open(html) {
+    $('#modal-content').innerHTML = html;
+    $('#modal').classList.replace('hidden', 'flex');
+    document.body.style.overflow = 'hidden';
+  },
+  close() {
+    $('#modal').classList.replace('flex', 'hidden');
+    document.body.style.overflow = '';
+  },
+  init() {
+    $('#modal').addEventListener('click', e => {
+      if (e.target.id === 'modal' || e.target.closest('[data-close]')) this.close();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') this.close(); });
+  }
+};
+
+/* ---------- 4b. FAQ ---------- */
+const Faq = {
+  init() {
+    $('#faq-search').addEventListener('input', e => this.render(e.target.value));
+    $('#faq-list').addEventListener('click', e => {
+      const btn = e.target.closest('[data-faq-toggle]');
+      if (!btn) return;
+      const item = btn.closest('.accordion-item');
+      const open = item.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+    });
+    this.render('');
+  },
+
+  // Surligne les mots recherchés dans le texte (après échappement HTML)
+  highlight(text, terms) {
+    let html = escapeHtml(text);
+    if (!terms.length) return html;
+    const norm = normalize(html);
+    const ranges = [];
+    terms.forEach(t => {
+      let i = norm.indexOf(t);
+      while (i !== -1) { ranges.push([i, i + t.length]); i = norm.indexOf(t, i + t.length); }
+    });
+    ranges.sort((a, b) => b[0] - a[0]).forEach(([s, e]) => { html = html.slice(0, s) + '<mark>' + html.slice(s, e) + '</mark>' + html.slice(e); });
+    return html;
+  },
+
+  render(query) {
+    const terms = normalize(query.trim()).split(/\s+/).filter(t => t.length > 1);
+    const results = FAQ.filter(f => {
+      const hay = normalize(`${f.q} ${f.a} ${f.cat}`);
+      return terms.every(t => hay.includes(t));
+    });
+    $('#faq-count').textContent = terms.length ? `${results.length} résultat${results.length > 1 ? 's' : ''} pour « ${query.trim()} »` : `${FAQ.length} questions fréquentes`;
+
+    if (!results.length) {
+      $('#faq-list').innerHTML = `
+        <div class="rounded-2xl bg-white p-8 text-center shadow-sm">
+          <p class="text-4xl">🤔</p>
+          <p class="mt-2 font-semibold">Aucune réponse trouvée</p>
+          <p class="mt-1 text-sm text-slate-500">Essayez un autre mot-clé ou posez votre question à Léa, l'assistante RH.</p>
+          <button onclick="Chat.open()" class="mt-4 rounded-xl bg-accent-500 px-5 py-3 font-semibold text-brand-900">💬 Demander à Léa</button>
+        </div>`;
+      return;
+    }
+    $('#faq-list').innerHTML = results.map(f => `
+      <div class="accordion-item ${terms.length ? 'open' : ''} overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <button data-faq-toggle aria-expanded="${terms.length > 0}" class="flex w-full items-center gap-3 px-4 py-4 text-left">
+          <span class="shrink-0 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-semibold uppercase text-brand-600">${f.cat}</span>
+          <span class="flex-1 font-semibold">${this.highlight(f.q, terms)}</span>
+          <span class="chevron shrink-0 text-slate-400 transition-transform">▾</span>
+        </button>
+        <div class="accordion-body"><div><p class="px-4 pb-4 leading-relaxed text-slate-600">${this.highlight(f.a, terms)}</p></div></div>
+      </div>`).join('');
+  }
+};
+
+/* ---------- 4c. BOÎTE À IDÉES ---------- */
+const Ideas = {
+  list: Store.get('ideas', DEFAULT_IDEAS),
+  voted: Store.get('ideas-voted', {}),
+  sort: 'votes',
+
+  init() {
+    $('#idea-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      this.list.push({
+        id: Date.now(), title: fd.get('title').trim(), desc: fd.get('desc').trim(), theme: fd.get('theme'),
+        author: 'Camille Martin (vous)', votes: 0, date: new Date().toISOString().slice(0, 10), mine: true
+      });
+      this.save();
+      e.target.reset();
+      this.sort = 'recent';
+      $('#idea-sort').value = 'recent';
+      this.render();
+      toast('Merci ! Votre idée a été publiée 💡');
+    });
+    $('#idea-sort').addEventListener('change', e => { this.sort = e.target.value; this.render(); });
+    $('#idea-list').addEventListener('click', e => {
+      const b = e.target.closest('[data-vote]');
+      if (b) this.vote(+b.dataset.vote);
+    });
+    this.render();
+  },
+
+  save() { Store.set('ideas', this.list); Store.set('ideas-voted', this.voted); },
+
+  vote(id) {
+    const idea = this.list.find(i => i.id === id);
+    if (this.voted[id]) { idea.votes--; delete this.voted[id]; }
+    else { idea.votes++; this.voted[id] = true; }
+    this.save();
+    this.render();
+  },
+
+  render() {
+    const themeIcon = { 'Qualité de vie au travail': '😊', 'Sécurité': '🦺', 'Environnement': '🌱', 'Organisation': '🗂️', 'Outils numériques': '💻' };
+    const sorted = [...this.list].sort((a, b) => this.sort === 'votes' ? b.votes - a.votes : b.date.localeCompare(a.date) || b.id - a.id);
+    $('#idea-list').innerHTML = sorted.map(i => {
+      const voted = !!this.voted[i.id];
+      return `
+      <div class="fade-in flex gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ${i.mine ? 'ring-accent-400' : 'ring-slate-100'}">
+        <button data-vote="${i.id}" aria-pressed="${voted}" aria-label="Voter pour cette idée"
+          class="flex h-16 w-14 shrink-0 flex-col items-center justify-center rounded-xl border-2 font-bold transition active:scale-95 ${voted ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-200 text-brand-700 hover:border-brand-500'}">
+          <span class="text-xs">${voted ? '✓' : '+1'}</span><span class="text-lg leading-none">${i.votes}</span>
+        </button>
+        <div class="min-w-0">
+          <p class="text-xs text-slate-400">${themeIcon[i.theme] || '💡'} ${escapeHtml(i.theme)} · ${formatDate(i.date)}</p>
+          <h3 class="font-bold leading-snug">${escapeHtml(i.title)}</h3>
+          <p class="mt-1 text-sm text-slate-500">${escapeHtml(i.desc)}</p>
+          <p class="mt-2 text-xs font-medium text-slate-400">par ${escapeHtml(i.author)}</p>
+        </div>
+      </div>`;
+    }).join('');
+  }
+};
+
+/* ---------- 4d. SONDAGE ---------- */
+const Poll = {
+  state: Store.get(POLL.id, { choice: null }),
+
+  init() {
+    $('#poll-card').addEventListener('click', e => {
+      const b = e.target.closest('[data-option]');
+      if (b && !this.state.choice) { this.state.choice = b.dataset.option; Store.set(POLL.id, this.state); this.render(); toast('Vote enregistré, merci ! 🗳️'); }
+      if (e.target.closest('[data-poll-reset]')) { this.state.choice = null; Store.set(POLL.id, this.state); this.render(); }
+    });
+    this.render();
+  },
+
+  render() {
+    const voted = this.state.choice;
+    const opts = POLL.options.map(o => ({ ...o, votes: o.votes + (voted === o.id ? 1 : 0) }));
+    const total = opts.reduce((s, o) => s + o.votes, 0);
+    const max = Math.max(...opts.map(o => o.votes));
+
+    $('#poll-card').innerHTML = `
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-lg font-bold">🗳️ Sondage du mois</h2>
+        <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Ouvert jusqu'au ${formatDate(POLL.closes)}</span>
+      </div>
+      <p class="mb-4 font-medium text-slate-700">${POLL.question}</p>
+      <div class="space-y-2.5">
+        ${opts.map(o => {
+          const pct = Math.round((o.votes / total) * 100);
+          if (!voted) return `
+            <button data-option="${o.id}" class="w-full rounded-xl border-2 border-slate-200 px-4 py-3.5 text-left font-medium transition hover:border-brand-500 hover:bg-brand-50 active:scale-[.99]">${o.label}</button>`;
+          const mine = voted === o.id;
+          return `
+            <div class="relative overflow-hidden rounded-xl border-2 ${mine ? 'border-brand-600' : 'border-slate-200'}">
+              <div class="absolute inset-y-0 left-0 ${o.votes === max ? 'bg-brand-100' : 'bg-slate-100'} transition-all duration-700 ease-out" style="width:0" data-pct="${pct}"></div>
+              <div class="relative flex items-center justify-between gap-2 px-4 py-3.5">
+                <span class="font-medium">${o.label} ${mine ? '<span class="text-xs font-semibold text-brand-600">· votre choix</span>' : ''}</span>
+                <span class="font-bold text-brand-700">${pct}%</span>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      <p class="mt-3 text-xs text-slate-400">${total.toLocaleString('fr-FR')} participants
+        ${voted ? ' · <button data-poll-reset class="underline hover:text-brand-600">modifier mon vote</button>' : ''}</p>`;
+
+    // Animation des barres de progression
+    requestAnimationFrame(() => document.querySelectorAll('#poll-card [data-pct]').forEach(el => (el.style.width = el.dataset.pct + '%')));
+  }
+};
+
+/* ---------- 4e. BAROMÈTRE D'ENGAGEMENT (eNPS) ---------- */
+const Enps = {
+  month: new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+  key: 'enps-' + new Date().toISOString().slice(0, 7),
+  // Répartition factice des réponses des autres salariés (notes 0 à 10)
+  baseline: [8, 6, 12, 18, 25, 60, 95, 260, 410, 330, 240],
+
+  init() {
+    this.vote = Store.get(this.key, null);
+    $('#enps-card').addEventListener('click', e => {
+      const b = e.target.closest('[data-score]');
+      if (b) { this.vote = +b.dataset.score; Store.set(this.key, this.vote); this.render(); toast('Merci pour votre réponse anonyme 🙏'); }
+      if (e.target.closest('[data-enps-reset]')) { this.vote = null; Store.set(this.key, null); this.render(); }
+    });
+    this.render();
+  },
+
+  compute() {
+    const dist = [...this.baseline];
+    if (this.vote !== null) dist[this.vote]++;
+    const total = dist.reduce((a, b) => a + b, 0);
+    const promoters = dist[9] + dist[10];
+    const detractors = dist.slice(0, 7).reduce((a, b) => a + b, 0);
+    return { total, promPct: Math.round(promoters / total * 100), detPct: Math.round(detractors / total * 100), score: Math.round((promoters - detractors) / total * 100) };
+  },
+
+  render() {
+    const color = (n) => n <= 6 ? 'hover:bg-rose-500 hover:border-rose-500' : n <= 8 ? 'hover:bg-amber-400 hover:border-amber-400' : 'hover:bg-emerald-500 hover:border-emerald-500';
+    const head = `
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-lg font-bold">📊 Baromètre d'engagement · <span class="capitalize">${this.month}</span></h2>
+        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">🔒 Réponse anonyme</span>
+      </div>
+      <p class="mb-4 text-slate-700">Sur une échelle de 0 à 10, recommanderiez-vous SmartFactory comme employeur à un proche ?</p>`;
+
+    if (this.vote === null) {
+      $('#enps-card').innerHTML = head + `
+        <div class="grid grid-cols-6 gap-2 sm:grid-cols-11">
+          ${Array.from({ length: 11 }, (_, n) => `
+            <button data-score="${n}" class="h-12 rounded-xl border-2 border-slate-200 text-lg font-bold transition hover:text-white active:scale-95 ${color(n)}">${n}</button>`).join('')}
+        </div>
+        <div class="mt-2 flex justify-between text-xs text-slate-400"><span>Pas du tout probable</span><span>Très probable</span></div>`;
+      return;
+    }
+
+    const r = this.compute();
+    $('#enps-card').innerHTML = head + `
+      <div class="grid items-center gap-4 sm:grid-cols-[auto_1fr]">
+        <div class="rounded-2xl bg-brand-50 px-6 py-4 text-center">
+          <p class="text-xs font-semibold uppercase text-brand-600">eNPS global</p>
+          <p class="text-4xl font-extrabold text-brand-700">${r.score > 0 ? '+' : ''}${r.score}</p>
+          <p class="text-xs text-slate-500">${r.total.toLocaleString('fr-FR')} réponses</p>
+        </div>
+        <div>
+          <p class="mb-2 text-sm">Votre note : <b class="text-brand-700">${this.vote}/10</b> · merci !</p>
+          <div class="flex h-4 overflow-hidden rounded-full bg-slate-100">
+            <div class="bg-rose-500" style="width:${r.detPct}%"></div>
+            <div class="bg-amber-400" style="width:${100 - r.detPct - r.promPct}%"></div>
+            <div class="bg-emerald-500" style="width:${r.promPct}%"></div>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+            <span>🔴 Détracteurs (0–6) ${r.detPct}%</span><span>🟡 Passifs (7–8) ${100 - r.detPct - r.promPct}%</span><span>🟢 Promoteurs (9–10) ${r.promPct}%</span>
+          </div>
+          <button data-enps-reset class="mt-2 text-xs text-slate-400 underline hover:text-brand-600">Modifier ma note</button>
+        </div>
+      </div>`;
+  }
+};
+
+/* ---------- 4f. ANNUAIRE ---------- */
+const Directory = {
+  init() {
+    const domains = [...new Set(DIRECTORY.map(p => p.domain))].sort();
+    $('#dir-site').innerHTML = '<option value="">📍 Tous les sites</option>' + SITES.map(s => `<option>${s}</option>`).join('');
+    $('#dir-domain').innerHTML = '<option value="">🎯 Toutes les expertises</option>' + domains.map(d => `<option>${d}</option>`).join('');
+    ['#dir-search', '#dir-site', '#dir-domain'].forEach(s => $(s).addEventListener('input', () => this.render()));
+    this.render();
+  },
+
+  render() {
+    const q = normalize($('#dir-search').value.trim());
+    const site = $('#dir-site').value;
+    const domain = $('#dir-domain').value;
+    const list = DIRECTORY.filter(p =>
+      (!site || p.site === site) && (!domain || p.domain === domain) && (!q || normalize(`${p.name} ${p.role} ${p.domain}`).includes(q)));
+
+    $('#dir-list').innerHTML = list.length ? list.map(p => {
+      const initials = p.name.split(' ').map(w => w[0]).join('');
+      return `
+      <div class="fade-in rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="grid h-14 w-14 shrink-0 place-items-center rounded-full ${p.color} text-lg font-bold text-white">${initials}</div>
+          <div class="min-w-0">
+            <h3 class="truncate font-bold">${p.name}</h3>
+            <p class="truncate text-sm text-slate-500">${p.role}</p>
+          </div>
+        </div>
+        <div class="mt-3 space-y-1 text-sm text-slate-600">
+          <p>📍 ${p.site}</p>
+          <p><span class="rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-600">${p.domain}</span></p>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          <a href="tel:${p.phone.replace(/\s/g, '')}" class="flex items-center justify-center gap-1 rounded-xl bg-brand-600 py-3 text-sm font-semibold text-white hover:bg-brand-700">📞 Appeler</a>
+          <a href="mailto:${p.email}" class="flex items-center justify-center gap-1 rounded-xl border-2 border-brand-600 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">✉️ E-mail</a>
+        </div>
+      </div>`;
+    }).join('') : `<p class="col-span-full rounded-2xl bg-white p-8 text-center text-slate-500 shadow-sm">Aucun interlocuteur ne correspond à ces critères.</p>`;
+  }
+};
+
+/* ---------- 4g. CONDUITE DU CHANGEMENT ---------- */
+const Guides = {
+  done: Store.get('guides-done', {}),
+
+  init() {
+    $('#guides-list').addEventListener('click', e => {
+      const open = e.target.closest('[data-guide]');
+      if (open) this.open(open.dataset.guide);
+    });
+    $('#modal').addEventListener('click', e => {
+      const b = e.target.closest('[data-guide-done]');
+      if (!b) return;
+      this.done[b.dataset.guideDone] = true;
+      Store.set('guides-done', this.done);
+      Modal.close();
+      this.render();
+      toast('Bravo, guide terminé ! 🎉');
+    });
+    this.render();
+  },
+
+  render() {
+    const count = GUIDES.filter(g => this.done[g.id]).length;
+    const pct = Math.round(count / GUIDES.length * 100);
+    $('#guides-progress').innerHTML = `
+      <div class="flex items-center justify-between">
+        <div><p class="font-bold">Votre parcours de prise en main</p><p class="text-sm text-slate-500">${count} guide${count > 1 ? 's' : ''} terminé${count > 1 ? 's' : ''} sur ${GUIDES.length}</p></div>
+        <span class="text-2xl font-extrabold text-brand-700">${pct}%</span>
+      </div>
+      <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-all duration-700" style="width:${pct}%"></div></div>
+      ${pct === 100 ? '<p class="mt-2 text-sm font-semibold text-emerald-600">🏅 Badge « Ambassadeur digital » débloqué !</p>' : ''}`;
+
+    const levelColor = { 'Débutant': 'bg-emerald-50 text-emerald-700', 'Intermédiaire': 'bg-amber-50 text-amber-700', 'Manager': 'bg-violet-50 text-violet-700' };
+    $('#guides-list').innerHTML = GUIDES.map(g => `
+      <button data-guide="${g.id}" class="flex items-start gap-4 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
+        <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand-50 text-3xl">${g.emoji}</span>
+        <span class="min-w-0 flex-1">
+          <span class="mb-1 flex flex-wrap gap-1.5 text-[11px] font-semibold">
+            <span class="rounded-full px-2 py-0.5 ${levelColor[g.level]}">${g.level}</span>
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">${g.type} · ⏱ ${g.duration}</span>
+          </span>
+          <span class="block font-bold leading-snug">${g.title}</span>
+          <span class="mt-1 block text-sm ${this.done[g.id] ? 'font-semibold text-emerald-600' : 'text-brand-600'}">${this.done[g.id] ? '✓ Terminé' : 'Commencer →'}</span>
+        </span>
+      </button>`).join('');
+  },
+
+  open(id) {
+    const g = GUIDES.find(x => x.id === id);
+    Modal.open(`
+      <div class="p-6">
+        <div class="flex items-center gap-3">
+          <span class="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-3xl">${g.emoji}</span>
+          <div><p class="text-xs font-semibold uppercase text-brand-600">${g.type} · ${g.duration}</p><h2 class="text-xl font-extrabold leading-tight">${g.title}</h2></div>
+        </div>
+        <ol class="mt-5 space-y-3">
+          ${g.steps.map((s, i) => `
+            <li class="flex gap-3"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white">${i + 1}</span><span class="pt-1 text-slate-700">${s}</span></li>`).join('')}
+        </ol>
+        <div class="mt-6 grid grid-cols-2 gap-2">
+          <button data-close class="rounded-xl border-2 border-slate-200 py-3.5 font-semibold">Plus tard</button>
+          <button data-guide-done="${g.id}" class="rounded-xl bg-emerald-600 py-3.5 font-semibold text-white">✓ J'ai terminé</button>
+        </div>
+      </div>`);
+  }
+};
+
+/* ---------- 4h. CHATBOT RH ---------- */
+const Chat = {
+  started: false,
+
+  init() {
+    $('#chat-toggle').addEventListener('click', () => this.toggle());
+    $('#chat-close').addEventListener('click', () => this.toggle(false));
+    $('#chat-suggestions').innerHTML = CHATBOT.map((c, i) => `
+      <button data-suggest="${i}" class="shrink-0 rounded-full border border-brand-500 px-3 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50">${c.label}</button>`).join('');
+    $('#chat-suggestions').addEventListener('click', e => {
+      const b = e.target.closest('[data-suggest]');
+      if (b) this.ask(CHATBOT[+b.dataset.suggest].label.replace(/^\S+\s/, ''));
+    });
+    $('#chat-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = $('#chat-input').value.trim();
+      if (v) { this.ask(v); $('#chat-input').value = ''; }
+    });
+  },
+
+  open() { this.toggle(true); },
+
+  toggle(force) {
+    const panel = $('#chat-panel');
+    const show = force ?? panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', !show);
+    panel.classList.toggle('flex', show);
+    $('#chat-toggle').textContent = show ? '✕' : '💬';
+    if (show && !this.started) {
+      this.started = true;
+      this.bot('Bonjour Camille 👋 Je suis Léa, l\'assistante RH de SmartFactory. Posez-moi une question ou choisissez un sujet ci-dessous.');
+    }
+    if (show && window.matchMedia('(min-width: 768px)').matches) $('#chat-input').focus();
+  },
+
+  addMessage(html, from) {
+    const wrap = document.createElement('div');
+    wrap.className = `fade-in flex ${from === 'user' ? 'justify-end' : 'justify-start'}`;
+    wrap.innerHTML = `<div class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${from === 'user' ? 'rounded-br-md bg-brand-600 text-white' : 'rounded-bl-md bg-white text-slate-700 shadow-sm'}">${html}</div>`;
+    $('#chat-messages').appendChild(wrap);
+    $('#chat-messages').scrollTop = $('#chat-messages').scrollHeight;
+    return wrap;
+  },
+
+  bot(html) { this.addMessage(html, 'bot'); },
+
+  ask(text) {
+    this.addMessage(escapeHtml(text), 'user');
+    const typing = this.addMessage('<span class="animate-pulse">Léa écrit…</span>', 'bot');
+    const q = normalize(text);
+    const match = CHATBOT.find(c => c.keys.some(k => q.includes(k)));
+    setTimeout(() => {
+      typing.remove();
+      if (match) this.bot(match.answer);
+      else if (/bonjour|salut|hello|coucou/.test(q)) this.bot('Bonjour ! Je peux vous renseigner sur les congés, la paie, la mutuelle ou le télétravail 😊');
+      else if (/merci/.test(q)) this.bot('Avec plaisir ! Bonne journée 🌞');
+      else this.bot('Je n\'ai pas encore la réponse à cette question 🤔. Consultez la <b>FAQ RH</b> ou contactez le RRH de votre site via l\'<b>Annuaire</b>. Je transmets aussi votre question à l\'équipe RH.');
+    }, 700);
+  }
+};
+
+/* ---------- 5. INITIALISATION ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const h = new Date().getHours();
+  $('#greeting').textContent = `${h < 18 && h >= 5 ? 'Bonjour' : 'Bonsoir'} Camille 👋`;
+
+  renderNav();
+  Modal.init();
+  News.init();
+  Faq.init();
+  Ideas.init();
+  Poll.init();
+  Enps.init();
+  Directory.init();
+  Guides.init();
+  Chat.init();
+
+  showTab(location.hash.slice(1));
+  window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+});
+</script>
+</body>
+</html>
