@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Miguel Automatismes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: dark steel plate opener (gate + amber beacon), then light sections in a 1120px column, the maintenance contract treated as the centrepiece with its logbook page. */
+:root{
+  --bg:#EDF0F2; --surface:#FFFFFF; --ink:#13212B; --muted:#51626D; --line:#CBD3D9;
+  --accent:#F2A007; --on-accent:#1A1300; --link:#17596A;
+  --plate:#13212B; --plate-2:#1D303D; --on-plate:#EEF2F4; --on-plate-muted:#A9B8C1; --plate-line:#34495A;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E171D; --surface:#17242D; --ink:#E6ECEF; --muted:#97A7B1; --line:#2B3C48;
+  --accent:#F5A91C; --on-accent:#1A1300; --link:#6FC0CF;
+  --plate:#0A1116; --plate-2:#15222B; --on-plate:#EEF2F4; --on-plate-muted:#A9B8C1; --plate-line:#2B3C48;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0E171D; --surface:#17242D; --ink:#E6ECEF; --muted:#97A7B1; --line:#2B3C48;
+  --accent:#F5A91C; --on-accent:#1A1300; --link:#6FC0CF;
+  --plate:#0A1116; --plate-2:#15222B; --on-plate:#EEF2F4; --on-plate-muted:#A9B8C1; --plate-line:#2B3C48;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+a{color:var(--link)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1120px;margin-inline:auto;padding-inline:20px}
+h1,h2,h3{font-family:var(--display);line-height:1.02;margin:0;text-wrap:balance;font-weight:700;text-transform:uppercase;letter-spacing:.005em}
+h1{font-size:clamp(2.7rem,7vw,5rem)}
+h2{font-size:clamp(2rem,4.4vw,3.1rem)}
+h3{font-size:1.55rem;font-weight:600}
+p{margin:0;max-width:65ch}
+.eyebrow{font-family:var(--mono);font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.btn{display:inline-block;font-family:var(--display);font-weight:600;font-size:1.2rem;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;padding:.6em 1.15em;border:2px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer;border-radius:2px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--on-plate);border-color:var(--plate-line)}
+.btn.ghost:hover{border-color:var(--accent)}
+
+.demo{background:var(--surface);color:var(--ink);border-bottom:1px solid var(--line);font-size:.88rem}
+.demo .wrap{padding-block:8px}
+.demo strong{font-weight:600}
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--plate);color:var(--on-plate);border-bottom:1px solid var(--plate-line)}
+.top .wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.45rem;text-transform:uppercase;letter-spacing:.03em;color:var(--on-plate);text-decoration:none;margin-right:auto}
+.lamp{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 28%,transparent)}
+.top nav{display:flex;gap:18px;flex-wrap:wrap}
+.top nav a{color:var(--on-plate-muted);text-decoration:none;font-size:.93rem}
+.top nav a:hover{color:var(--on-plate)}
+.top .btn{font-size:1rem;padding:.4em .9em}
+
+/* Opener */
+.hero{background:var(--plate);color:var(--on-plate)}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:44px;align-items:center;padding-block:56px 64px}
+.hero .eyebrow{color:var(--accent)}
+.hero h1{margin-block:14px 20px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{color:var(--on-plate-muted);font-size:1.1rem}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.scene{position:relative;aspect-ratio:5/3;max-width:100%;background:var(--plate-2);border:1px solid var(--plate-line);overflow:hidden}
+.scene .sky{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 39px,color-mix(in srgb,var(--plate-line) 55%,transparent) 39px 40px),repeating-linear-gradient(0deg,transparent 0 39px,color-mix(in srgb,var(--plate-line) 55%,transparent) 39px 40px)}
+.scene .ground{position:absolute;left:0;right:0;bottom:0;height:16%;background:var(--plate);border-top:2px solid var(--plate-line)}
+.pillar{position:absolute;bottom:16%;width:7%;height:60%;background:var(--on-plate-muted)}
+.pillar.l{left:10%}.pillar.r{right:10%}
+.leaf{position:absolute;left:17%;width:66%;bottom:19%;height:44%;border:5px solid var(--on-plate);background:repeating-linear-gradient(90deg,var(--on-plate) 0 5px,transparent 5px 26px);animation:slide 9s ease-in-out infinite}
+.beacon{position:absolute;right:11.6%;bottom:76%;width:3.8%;aspect-ratio:1;border-radius:50% 50% 12% 12%;background:var(--accent);animation:blink 9s steps(1) infinite}
+.beam{position:absolute;left:17%;right:17%;bottom:24%;border-top:2px dashed var(--accent);opacity:.9}
+.tag{position:absolute;font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--on-plate-muted);background:var(--plate);padding:2px 6px;border:1px solid var(--plate-line)}
+.tag.t1{right:3%;top:5%}.tag.t2{left:3%;bottom:3%}
+@keyframes slide{0%,12%{transform:translateX(0)}40%,62%{transform:translateX(-78%)}90%,100%{transform:translateX(0)}}
+@keyframes blink{0%,12%{opacity:.35}13%,17%,21%,25%,29%,33%,37%,63%,67%,71%,75%,79%,83%,87%{opacity:1}15%,19%,23%,27%,31%,35%,65%,69%,73%,77%,81%,85%,89%{opacity:.25}40%,62%{opacity:.35}90%,100%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.leaf,.beacon{animation:none}}
+
+/* Legal duty band */
+.duty{background:var(--accent);color:var(--on-accent);border-block:10px solid transparent;border-image:repeating-linear-gradient(-45deg,var(--plate) 0 14px,var(--accent) 14px 28px) 10}
+.duty .wrap{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center;padding-block:26px}
+.duty .big{font-family:var(--display);font-weight:700;font-size:clamp(3.6rem,9vw,6rem);line-height:.85}
+.duty p{font-size:1.08rem;max-width:70ch}
+.duty small{display:block;font-family:var(--mono);font-size:.76rem;margin-top:8px}
+
+section{padding-block:72px}
+.head{display:grid;gap:12px;margin-bottom:36px}
+.head p{color:var(--muted)}
+
+/* Services */
+.main-service{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:40px;align-items:start;background:var(--surface);border:1px solid var(--line);padding:32px}
+.main-service ul,.side ul{margin:16px 0 0;padding-left:1.1em;display:grid;gap:8px}
+.price{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:14px}
+.price b{font-family:var(--display);font-size:2.7rem;font-weight:700;line-height:1}
+.price span{color:var(--muted);font-size:.95rem}
+.book{font-family:var(--mono);font-size:.82rem;background:var(--bg);border:1px solid var(--line);padding:18px;min-width:0}
+.book header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.book .row{display:flex;justify-content:space-between;gap:12px;padding-block:6px;border-bottom:1px dashed var(--line)}
+.book .ok{color:var(--link);font-weight:500;white-space:nowrap}
+.book footer{margin-top:10px;color:var(--muted)}
+.sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px;margin-top:40px}
+.side{border-top:3px solid var(--ink);padding-top:18px}
+.side p{margin-top:10px;color:var(--muted)}
+
+/* Two audiences */
+.alt{background:var(--surface);border-block:1px solid var(--line)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px}
+.two h3{margin-bottom:12px}
+.steps{list-style:none;counter-reset:s;margin:18px 0 0;padding:0;display:grid;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:2.2rem minmax(0,1fr);gap:10px}
+.steps li::before{content:counter(s);font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1;color:var(--link)}
+.facts{margin:18px 0 0;padding:0;list-style:none;display:grid;gap:12px}
+.facts li{padding-left:16px;border-left:3px solid var(--accent)}
+.calc{margin-top:26px;padding:18px;border:1px solid var(--line);background:var(--bg);display:grid;gap:12px}
+.calc label{font-size:.92rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.calc output{font-family:var(--display);font-weight:700;font-size:2rem;font-variant-numeric:tabular-nums}
+.calc small,.note{color:var(--muted);font-size:.85rem}
+
+/* Miguel + area */
+.about{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:48px;align-items:start}
+.about p+p{margin-top:14px}
+.zone{font-family:var(--mono);font-size:.86rem;border:1px solid var(--line);padding:20px;background:var(--surface)}
+.zone dl{margin:0;display:grid;gap:12px}
+.zone dt{text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-size:.72rem}
+.zone dd{margin:2px 0 0}
+
+/* Quote */
+.quote{background:var(--plate);color:var(--on-plate)}
+.quote .head p{color:var(--on-plate-muted)}
+form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:820px}
+.f{display:grid;gap:6px;font-size:.9rem}
+.f.full{grid-column:1/-1}
+input,select,textarea{font:inherit;font-size:1rem;padding:.65em .75em;background:var(--plate-2);color:var(--on-plate);border:1px solid var(--plate-line);border-radius:2px;width:100%}
+.calc input{width:6.5em;background:var(--surface);color:var(--ink);border-color:var(--line)}
+textarea{min-height:110px;resize:vertical}
+#recap{grid-column:1/-1;border:2px solid var(--accent);padding:16px;font-family:var(--mono);font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.quote .note{color:var(--on-plate-muted);grid-column:1/-1}
+
+footer.legal{padding-block:36px 48px;font-size:.86rem;color:var(--muted)}
+footer.legal .wrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+footer.legal h4{font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;color:var(--ink);font-weight:500}
+.todo{background:color-mix(in srgb,var(--accent) 30%,transparent);color:var(--ink);padding:0 4px;font-family:var(--mono);font-size:.9em}
+
+@media (max-width:820px){
+  .hero .wrap,.main-service,.sides,.two,.about,form,footer.legal .wrap{grid-template-columns:minmax(0,1fr)}
+  .duty .wrap{grid-template-columns:minmax(0,1fr);gap:8px}
+  .top nav{display:none}
+  section{padding-block:52px}
+  .main-service{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="demo" role="note"><div class="wrap"><strong>Demonstration website.</strong> Student project, Master in Innovation Management, IAE Limoges. The company has not been created yet and the prices shown are not a commercial offer.</div></div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#home"><span class="lamp"></span>Miguel Automatismes</a>
+    <nav aria-label="Main navigation">
+      <a href="#services">Services and prices</a>
+      <a href="#managers">Property managers</a>
+      <a href="#homeowners">Homeowners</a>
+      <a href="#miguel">The engineer</a>
+    </nav>
+    <a class="btn" href="#quote">Request a quote</a>
+  </div>
+</header>
+
+<div class="hero" id="home">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Toulouse and Haute-Garonne · Maintenance, installation, repair</span>
+      <h1>Your gates and garage doors, <em>maintained and compliant.</em></h1>
+      <p>An electronics engineer maintains, installs and repairs your automatic systems, whatever the brand, and keeps the compliance file up to date for you.</p>
+      <div class="cta">
+        <a class="btn" href="#quote">Request a quote</a>
+        <a class="btn ghost" href="#services">See prices</a>
+      </div>
+    </div>
+    <div class="scene" role="img" aria-label="Diagram of a motorised sliding gate with its amber flashing beacon and photocell">
+      <div class="sky"></div>
+      <div class="leaf"></div>
+      <div class="beam"></div>
+      <div class="pillar l"></div><div class="pillar r"></div>
+      <div class="beacon"></div>
+      <div class="ground"></div>
+      <span class="tag t1">Flashing beacon</span>
+      <span class="tag t2">Photocell</span>
+    </div>
+  </div>
+</div>
+
+<div class="duty">
+  <div class="wrap">
+    <div class="big">2×/year</div>
+    <div>
+      <p><strong>Maintaining automatic garage doors is a legal duty.</strong> In residential buildings they must be maintained and checked at least twice a year, with every visit recorded in a maintenance logbook. The same requirement applies to doors and gates in workplaces.</p>
+      <small>Code de la construction et de l'habitation, art. R. 134-58 · Code du travail, art. R. 4224-12</small>
+    </div>
+  </div>
+</div>
+
+<section id="services">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">Services and prices</span>
+      <h2>Three services, published prices</h2>
+      <p>Gates, garage doors, roller shutters, access control, intercoms, alarms and cameras. Indicative prices, confirmed by a written quote.</p>
+    </div>
+
+    <div class="main-service">
+      <div>
+        <h3>Maintenance contract</h3>
+        <div class="price"><b>€400</b><span>per year, per building</span></div>
+        <div class="price"><b>€120</b><span>per year for a private gate</span></div>
+        <ul>
+          <li>Two visits a year with a check of every safety device.</li>
+          <li>Maintenance logbook updated after each visit and available to the manager.</li>
+          <li>Breakdown response time written into the contract.</li>
+          <li>All brands: one contact for a mixed set of equipment.</li>
+        </ul>
+      </div>
+      <div class="book" aria-label="Sample maintenance logbook page">
+        <header><span>Maintenance logbook</span><span>Sample</span></header>
+        <div class="row"><span>Photocells</span><span class="ok">compliant</span></div>
+        <div class="row"><span>Safety edge</span><span class="ok">compliant</span></div>
+        <div class="row"><span>Amber flashing beacon</span><span class="ok">compliant</span></div>
+        <div class="row"><span>Lighting of the movement area</span><span class="ok">compliant</span></div>
+        <div class="row"><span>Manual release</span><span class="ok">compliant</span></div>
+        <div class="row"><span>Closing force limit</span><span class="ok">to adjust</span></div>
+        <footer>Visit 1 of 2 · remarks and repair quote attached</footer>
+      </div>
+    </div>
+
+    <div class="sides">
+      <div class="side">
+        <h3>Installation</h3>
+        <div class="price"><b>By quote</b><span>free, after a site visit</span></div>
+        <p>Gate and garage door motors, roller shutters, intercoms, alarms, cameras, access control.</p>
+        <ul>
+          <li>Risk analysis and CE marking for every motorised gate.</li>
+          <li>Advice on the rules that apply to cameras before they are fitted.</li>
+          <li>Two-year guarantee on the equipment installed.</li>
+        </ul>
+      </div>
+      <div class="side">
+        <h3>Repair</h3>
+        <div class="price"><b>€200</b><span>per call-out, parts billed separately</span></div>
+        <p>A stuck gate, a garage door that no longer closes, a silent intercom: we work on every brand, including equipment we did not install.</p>
+        <ul>
+          <li>Diagnosis and price of parts given before any repair.</li>
+          <li>Repairs are billed on top of the maintenance contract.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note" style="margin-top:28px">Remote alarm monitoring is not provided directly: it is handled by a partner holding the CNAPS authorisation.</p>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap two">
+    <div id="managers">
+      <span class="eyebrow">Property managers</span>
+      <h3 style="margin-top:10px">A compliant contract, building by building</h3>
+      <p>We start by checking what you already have, with no commitment.</p>
+      <ol class="steps">
+        <li><span><strong>Free review of one building.</strong> Is the logbook kept? Were the two visits done? Do the safety devices work?</span></li>
+        <li><span><strong>Written quote per building.</strong> Visits, response time and the price of common repairs.</span></li>
+        <li><span><strong>Start with one or two buildings.</strong> You judge the results before extending to the rest of your portfolio.</span></li>
+        <li><span><strong>Follow-up.</strong> A report after each visit, with a repair quote when one is needed.</span></li>
+      </ol>
+      <div class="calc">
+        <label for="nb-imm">Number of buildings to maintain <input id="nb-imm" type="number" min="1" max="500" value="5" inputmode="numeric"></label>
+        <div><output id="calc-out" for="nb-imm">€2,000 per year</output></div>
+        <small id="calc-sub">10 maintenance visits a year, 2 per building. Estimate based on €400 per building.</small>
+      </div>
+    </div>
+    <div id="homeowners">
+      <span class="eyebrow">Homeowners</span>
+      <h3 style="margin-top:10px">Motorise, secure and maintain your home</h3>
+      <p>Gate, garage door, shutters, alarm, cameras: a clear quote after a visit to your home, anywhere in the Toulouse suburban ring.</p>
+      <ul class="facts">
+        <li><strong>14 days to change your mind.</strong> A quote signed at your home gives you a 14-day withdrawal period, and no payment is taken during the first seven days.</li>
+        <li><strong>10% VAT.</strong> It applies to work in a home completed more than two years ago, with an attestation signed by you.</li>
+        <li><strong>Cameras.</strong> At home they must not film the street or the neighbouring property. We set the angles accordingly.</li>
+        <li><strong>Yearly maintenance of your gate:</strong> €120 a year, to avoid a breakdown on a rainy evening.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="miguel">
+  <div class="wrap about">
+    <div>
+      <span class="eyebrow">The engineer</span>
+      <h2 style="margin-block:10px 20px">Miguel, electronics engineer</h2>
+      <p>Miguel holds a French electronics engineering degree and founded the company on a simple idea: a motorised gate is a machine, and a machine is looked after methodically. Every installation has its file, and every visit leaves a written record.</p>
+      <p>He does the work himself, on every brand, and remains your contact from the quote to the last visit. You can deal with him in French, Spanish or English.</p>
+    </div>
+    <div class="zone">
+      <dl>
+        <div><dt>Service area</dt><dd>Toulouse, its suburban ring and the rest of Haute-Garonne</dd></div>
+        <div><dt>Phone</dt><dd><span class="todo">to be completed</span></dd></div>
+        <div><dt>Email</dt><dd><span class="todo">to be completed</span></dd></div>
+        <div><dt>Opening hours</dt><dd><span class="todo">to be completed</span></dd></div>
+        <div><dt>Qualification</dt><dd>Electronics engineering degree · ten-year (décennale) and professional liability insurance</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="quote" id="quote">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow" style="color:var(--accent)">Free quote</span>
+      <h2>Tell us what you need</h2>
+      <p>A few lines are enough. We will come back to you with a proposed visit.</p>
+    </div>
+    <form id="form-devis" novalidate>
+      <label class="f" for="profil">You are
+        <select id="profil" name="profil">
+          <option>Property manager</option>
+          <option>Homeowner</option>
+          <option>Business or shop</option>
+        </select>
+      </label>
+      <label class="f" for="besoin">Your need
+        <select id="besoin" name="besoin">
+          <option>Maintenance contract</option>
+          <option>Installation</option>
+          <option>Repair</option>
+          <option>Free review of a building</option>
+        </select>
+      </label>
+      <label class="f" for="nom">Name <input id="nom" name="nom" autocomplete="name" required></label>
+      <label class="f" for="commune">Town <input id="commune" name="commune" autocomplete="address-level2" placeholder="Colomiers, Balma, Toulouse…"></label>
+      <label class="f full" for="contact">Phone or email <input id="contact" name="contact" required></label>
+      <label class="f full" for="message">Equipment concerned and the problem
+        <textarea id="message" name="message" placeholder="Shared garage door, unknown brand, has not closed since Monday."></textarea>
+      </label>
+      <div class="f full"><button class="btn" type="submit">Prepare my request</button></div>
+      <div id="recap" role="status" hidden></div>
+      <p class="note">Demo version: the form does not send anything yet. It will be connected to the company's inbox when the site goes live.</p>
+    </form>
+  </div>
+</section>
+
+<footer class="legal">
+  <div class="wrap">
+    <div>
+      <h4>Legal notice</h4>
+      Miguel Automatismes (provisional name) · EURL with share capital of <span class="todo">to be completed</span> · SIREN <span class="todo">to be completed</span> · Registered office: <span class="todo">to be completed</span>, Haute-Garonne · Website host: <span class="todo">to be completed</span>
+    </div>
+    <div>
+      <h4>Insurance</h4>
+      Ten-year (décennale) and professional liability cover: insurer and policy number <span class="todo">to be completed</span>. Geographical cover: <span class="todo">to be completed</span>.
+    </div>
+    <div>
+      <h4>Consumer mediation</h4>
+      In the event of a dispute, private customers can refer the matter free of charge to the consumer mediator: <span class="todo">name and contact details to be completed</span>.
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var n=document.getElementById('nb-imm'),out=document.getElementById('calc-out'),sub=document.getElementById('calc-sub');
+  var fmt=new Intl.NumberFormat('en-GB');
+  function calc(){
+    var v=Math.max(1,Math.min(500,parseInt(n.value,10)||1));
+    out.textContent='€'+fmt.format(v*400)+' per year';
+    sub.textContent=fmt.format(v*2)+' maintenance visits a year, 2 per building. Estimate based on €400 per building.';
+  }
+  n.addEventListener('input',calc);calc();
+
+  var form=document.getElementById('form-devis'),recap=document.getElementById('recap');
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var g=function(id){return document.getElementById(id).value.trim()};
+    if(!g('nom')||!g('contact')){
+      recap.hidden=false;
+      recap.textContent='Your name or a way to reach you is missing. Fill in both fields and try again.';
+      document.getElementById(g('nom')?'contact':'nom').focus();
+      return;
+    }
+    recap.hidden=false;
+    recap.textContent='Request prepared (not sent in this demo)\n\n'+
+      'Profile: '+g('profil')+'\nNeed: '+g('besoin')+'\nName: '+g('nom')+
+      '\nTown: '+(g('commune')||'not given')+'\nContact: '+g('contact')+
+      '\nDescription: '+(g('message')||'not given');
+  });
+})();
+</script>
+</body>
+</html>
