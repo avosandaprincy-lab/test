@@ -15,6 +15,21 @@ Double-cliquez sur `index.html` : il s'ouvre dans votre navigateur. Une connexio
 | 🧭 Guides | Espace conduite du changement : tutoriels pas à pas, progression et badge |
 | 💬 Chatbot | Assistante « Léa » : congés, paie, mutuelle, télétravail (mots-clés et suggestions rapides) |
 
+## Connexion (démonstration)
+Le bouton **Se connecter**, en haut à droite, ouvre la fenêtre de connexion. On s'identifie avec son e-mail ou son matricule.
+
+| Compte | Identifiant | Matricule | Mot de passe |
+|---|---|---|---|
+| Camille Martin, technicienne (Lyon) | `camille.martin@smartfactory.fr` | `SF10234` | `Usine2026!` |
+| Sophie Lambert, DRH (Siège) | `sophie.lambert@smartfactory.fr` | `SF00001` | `DRH2026!` |
+
+- Sans connexion, on peut lire les actualités, la FAQ, l'annuaire et les guides.
+- Aimer un article, voter, proposer une idée ou répondre au sondage et au baromètre demande d'être connecté. L'action reprend automatiquement après la connexion.
+- « Se souvenir de moi » garde la session sur l'appareil. Sinon, elle s'arrête à la fermeture de l'onglet.
+- Pour ajouter un compte, ajoutez-le à la liste `USERS` dans `index.html`.
+
+⚠️ **C'est une simulation**, pas une vraie sécurité : les mots de passe sont lisibles dans le code de la page. Avant une utilisation réelle, branchez une vraie authentification côté serveur, par exemple le SSO de l'entreprise (Microsoft Entra ID / Azure AD), ou l'authentification Netlify (Identity) pour un pilote.
+
 Navigation : barre d'onglets en bas sur mobile, menu latéral à partir de 768 px. Les liens profonds fonctionnent (`index.html#faq`).
 
 ## Données

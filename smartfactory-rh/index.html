@@ -71,20 +71,15 @@
 <!-- ===== HEADER ===== -->
 <header class="sticky top-0 z-30 bg-brand-700 text-white shadow-md">
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-    <div class="flex items-center gap-3">
-      <img src="images/logo.svg" alt="SmartFactory" width="40" height="40" class="h-10 w-10 rounded-xl" />
+    <div class="flex min-w-0 items-center gap-3">
+      <img src="images/logo.svg" alt="SmartFactory" width="40" height="40" class="h-10 w-10 shrink-0 rounded-xl" />
       <div>
-        <p class="text-lg font-extrabold leading-tight">SmartFactory <span class="text-accent-400">RH</span></p>
-        <p class="text-xs text-white/70" id="header-subtitle">Votre espace salarié</p>
+        <p class="whitespace-nowrap text-lg font-extrabold leading-tight">SmartFactory <span class="text-accent-400">RH</span></p>
+        <p class="truncate text-xs text-white/70" id="header-subtitle">Votre espace salarié</p>
       </div>
     </div>
-    <div class="flex items-center gap-3">
-      <div class="hidden text-right sm:block">
-        <p class="text-sm font-semibold">Camille Martin</p>
-        <p class="text-xs text-white/70">Technicienne maintenance · Lyon</p>
-      </div>
-      <div class="grid h-10 w-10 place-items-center rounded-full bg-accent-500 font-bold text-brand-900">CM</div>
-    </div>
+    <!-- Zone utilisateur : bouton « Se connecter » ou profil (rendu par Auth.renderHeader) -->
+    <div class="relative" id="user-area"></div>
   </div>
 </header>
 
@@ -100,7 +95,7 @@
     <section data-view="news" class="view fade-in">
       <div class="relative mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-900 p-5 text-white shadow">
         <img src="images/hero-usine.svg" alt="" class="pointer-events-none absolute -right-6 bottom-0 w-72 max-w-[70%] sm:w-96" />
-        <p class="text-sm text-white/80" id="greeting">Bonjour Camille 👋</p>
+        <p class="text-sm text-white/80" id="greeting">Bonjour 👋</p>
         <h1 class="mt-1 text-2xl font-extrabold">Fil d'actualités RH</h1>
         <p class="mt-1 text-sm text-white/80">Toute l'info du siège, des sites et du télétravail, au même endroit.</p>
       </div>
@@ -408,6 +403,16 @@ const CHATBOT = [
     answer: 'Le nouvel accord permet jusqu\'à <b>2 jours de télétravail par semaine</b> pour les postes éligibles, avec une indemnité de 2,70 €/jour. La demande se fait auprès de votre manager dans l\'application.' }
 ];
 
+/* Comptes de démonstration (connexion simulée côté navigateur).
+   ⚠️ En production : authentification par le serveur (SSO entreprise / Azure AD),
+   jamais de mots de passe écrits dans le code de la page. */
+const USERS = [
+  { matricule: 'SF10234', email: 'camille.martin@smartfactory.fr', password: 'Usine2026!',
+    firstName: 'Camille', lastName: 'Martin', job: 'Technicienne maintenance', site: 'Lyon' },
+  { matricule: 'SF00001', email: 'sophie.lambert@smartfactory.fr', password: 'DRH2026!',
+    firstName: 'Sophie', lastName: 'Lambert', job: 'DRH Groupe', site: 'Siège' }
+];
+
 /* ---------- 3. NAVIGATION ---------- */
 const TABS = [
   { id: 'news', label: 'Actus', full: 'Actualités', icon: '📰' },
@@ -462,7 +467,7 @@ const News = {
     });
     $('#news-list').addEventListener('click', e => {
       const like = e.target.closest('[data-like]');
-      if (like) { e.stopPropagation(); return this.toggleLike(+like.dataset.like); }
+      if (like) { e.stopPropagation(); return Auth.require(() => this.toggleLike(+like.dataset.like), 'Connectez-vous pour aimer un article.'); }
       const card = e.target.closest('[data-article]');
       if (card) this.open(+card.dataset.article);
     });
@@ -526,6 +531,152 @@ const News = {
         <p class="mt-3 leading-relaxed text-slate-600">${n.body}</p>
         <button data-close class="mt-6 w-full rounded-xl bg-brand-600 py-3.5 font-semibold text-white">Fermer</button>
       </div>`);
+  }
+};
+
+/* ---------- Connexion ---------- */
+const Auth = {
+  user: null,
+  pending: null, // action à reprendre après connexion (ex : un vote)
+
+  init() {
+    // « Se souvenir de moi » → localStorage ; sinon → sessionStorage (fermé avec l'onglet)
+    let saved = Store.get('session', null);
+    if (!saved) { try { saved = JSON.parse(sessionStorage.getItem('sf-rh:session')); } catch { saved = null; } }
+    this.user = USERS.find(u => saved && u.matricule === saved.matricule) || null;
+
+    $('#user-area').addEventListener('click', e => {
+      if (e.target.closest('[data-login]')) this.openLogin();
+      if (e.target.closest('[data-user-menu]')) $('#user-menu').classList.toggle('hidden');
+      if (e.target.closest('[data-logout]')) this.logout();
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#user-area')) $('#user-menu')?.classList.add('hidden');
+    });
+    // Formulaire de connexion (dans la modale)
+    $('#modal').addEventListener('submit', e => {
+      if (e.target.getAttribute('id') !== 'login-form') return;
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      this.login(fd.get('login'), fd.get('password'), fd.get('remember') === 'on');
+    });
+    $('#modal').addEventListener('click', e => {
+      if (e.target.closest('[data-toggle-pw]')) {
+        const input = $('#login-form [name=password]');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        e.target.closest('[data-toggle-pw]').textContent = input.type === 'password' ? '👁️' : '🙈';
+      }
+      const demo = e.target.closest('[data-demo]');
+      if (demo) {
+        const u = USERS[+demo.dataset.demo];
+        $('#login-form [name=login]').value = u.email;
+        $('#login-form [name=password]').value = u.password;
+      }
+    });
+    this.refresh();
+  },
+
+  initials(u) { return (u.firstName[0] + u.lastName[0]).toUpperCase(); },
+
+  // Exécute l'action si connecté, sinon ouvre la connexion puis l'exécute après
+  require(action, reason = 'Connectez-vous pour participer.') {
+    if (this.user) return action();
+    this.pending = action;
+    this.openLogin(reason);
+  },
+
+  openLogin(reason = '') {
+    Modal.open(`
+      <form id="login-form" method="post" action="javascript:void(0)" class="p-6" novalidate>
+        <div class="mb-5 flex items-center gap-3">
+          <img src="images/logo.svg" alt="" class="h-12 w-12 rounded-xl" />
+          <div><h2 class="text-xl font-extrabold leading-tight">Se connecter</h2><p class="text-sm text-slate-500">${reason || 'Accédez à votre espace salarié.'}</p></div>
+        </div>
+        <label class="mb-3 block">
+          <span class="mb-1 block text-sm font-medium">E-mail professionnel ou matricule</span>
+          <input name="login" autocomplete="username" required placeholder="prenom.nom@smartfactory.fr"
+                 class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+        </label>
+        <label class="mb-3 block">
+          <span class="mb-1 block text-sm font-medium">Mot de passe</span>
+          <span class="relative block">
+            <input name="password" type="password" autocomplete="current-password" required
+                   class="w-full rounded-xl border border-slate-200 py-3 pl-4 pr-14 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+            <button type="button" data-toggle-pw aria-label="Afficher le mot de passe" class="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-lg hover:bg-slate-100">👁️</button>
+          </span>
+        </label>
+        <label class="mb-4 flex min-h-[44px] items-center gap-3 text-sm">
+          <input type="checkbox" name="remember" class="h-5 w-5 accent-brand-600" checked /> Se souvenir de moi sur cet appareil
+        </label>
+        <p id="login-error" class="mb-3 hidden rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700" role="alert"></p>
+        <button class="w-full rounded-xl bg-brand-600 py-3.5 text-base font-semibold text-white shadow hover:bg-brand-700">Se connecter</button>
+        <button type="button" data-close class="mt-2 w-full rounded-xl py-3 text-sm font-medium text-slate-500 hover:bg-slate-100">Annuler</button>
+
+        <div class="mt-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          <p class="mb-2 font-semibold">🧪 Comptes de démonstration</p>
+          ${USERS.map((u, i) => `
+            <button type="button" data-demo="${i}" class="mb-1 flex w-full items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-left hover:bg-amber-100">
+              <span><b>${u.firstName} ${u.lastName}</b> · ${u.job}<br><span class="text-amber-700">${u.email} / ${u.password}</span></span>
+              <span class="shrink-0 font-semibold text-brand-700">Remplir</span>
+            </button>`).join('')}
+        </div>
+      </form>`);
+    $('#login-form [name=login]').focus();
+  },
+
+  login(id, password, remember) {
+    const key = String(id || '').trim().toLowerCase();
+    const user = USERS.find(u => (u.email === key || u.matricule.toLowerCase() === key) && u.password === password);
+    if (!user) {
+      const err = $('#login-error');
+      err.textContent = 'Identifiant ou mot de passe incorrect.';
+      err.classList.remove('hidden');
+      return;
+    }
+    this.user = user;
+    const session = { matricule: user.matricule };
+    if (remember) Store.set('session', session);
+    else { Store.set('session', null); try { sessionStorage.setItem('sf-rh:session', JSON.stringify(session)); } catch {} }
+    Modal.close();
+    this.refresh();
+    toast(`Bienvenue ${user.firstName} ! 👋`);
+    const next = this.pending; this.pending = null;
+    if (next) next();
+  },
+
+  logout() {
+    this.user = null;
+    Store.set('session', null);
+    try { sessionStorage.removeItem('sf-rh:session'); } catch {}
+    this.refresh();
+    toast('Vous êtes déconnecté(e).');
+  },
+
+  // Met à jour tout ce qui dépend de l'utilisateur connecté
+  refresh() {
+    const u = this.user;
+    $('#user-area').innerHTML = u ? `
+      <button data-user-menu class="flex items-center gap-3 rounded-full py-1 pl-1 pr-1 hover:bg-white/10 sm:pl-3" aria-haspopup="true">
+        <span class="hidden text-right sm:block">
+          <span class="block text-sm font-semibold">${u.firstName} ${u.lastName}</span>
+          <span class="block text-xs text-white/70">${u.job} · ${u.site}</span>
+        </span>
+        <span class="grid h-10 w-10 place-items-center rounded-full bg-accent-500 font-bold text-brand-900">${this.initials(u)}</span>
+      </button>
+      <div id="user-menu" class="absolute right-0 top-14 hidden w-64 overflow-hidden rounded-2xl bg-white text-slate-700 shadow-xl ring-1 ring-slate-200">
+        <div class="border-b border-slate-100 px-4 py-3">
+          <p class="font-semibold">${u.firstName} ${u.lastName}</p>
+          <p class="text-xs text-slate-500">${u.email}</p>
+          <p class="text-xs text-slate-500">Matricule ${u.matricule}</p>
+        </div>
+        <button data-logout class="flex w-full items-center gap-2 px-4 py-3.5 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50">↪️ Se déconnecter</button>
+      </div>` : `
+      <button data-login class="flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-accent-500 px-4 text-sm font-semibold text-brand-900 shadow hover:bg-accent-400">
+        🔐 <span>Se connecter</span>
+      </button>`;
+
+    const h = new Date().getHours();
+    $('#greeting').textContent = `${h < 18 && h >= 5 ? 'Bonjour' : 'Bonsoir'}${u ? ' ' + u.firstName : ''} 👋`;
   }
 };
 
@@ -615,24 +766,29 @@ const Ideas = {
   init() {
     $('#idea-form').addEventListener('submit', e => {
       e.preventDefault();
-      const fd = new FormData(e.target);
-      this.list.push({
-        id: Date.now(), title: fd.get('title').trim(), desc: fd.get('desc').trim(), theme: fd.get('theme'),
-        author: 'Camille Martin (vous)', votes: 0, date: new Date().toISOString().slice(0, 10), mine: true
-      });
-      this.save();
-      e.target.reset();
-      this.sort = 'recent';
-      $('#idea-sort').value = 'recent';
-      this.render();
-      toast('Merci ! Votre idée a été publiée 💡');
+      Auth.require(() => this.add(e.target), 'Connectez-vous pour proposer une idée.');
     });
     $('#idea-sort').addEventListener('change', e => { this.sort = e.target.value; this.render(); });
     $('#idea-list').addEventListener('click', e => {
       const b = e.target.closest('[data-vote]');
-      if (b) this.vote(+b.dataset.vote);
+      if (b) Auth.require(() => this.vote(+b.dataset.vote), 'Connectez-vous pour voter.');
     });
     this.render();
+  },
+
+  add(form) {
+    const fd = new FormData(form);
+    const u = Auth.user;
+    this.list.push({
+      id: Date.now(), title: fd.get('title').trim(), desc: fd.get('desc').trim(), theme: fd.get('theme'),
+      author: `${u.firstName} ${u.lastName} (vous)`, votes: 0, date: new Date().toISOString().slice(0, 10), mine: true
+    });
+    this.save();
+    form.reset();
+    this.sort = 'recent';
+    $('#idea-sort').value = 'recent';
+    this.render();
+    toast('Merci ! Votre idée a été publiée 💡');
   },
 
   save() { Store.set('ideas', this.list); Store.set('ideas-voted', this.voted); },
@@ -674,7 +830,7 @@ const Poll = {
   init() {
     $('#poll-card').addEventListener('click', e => {
       const b = e.target.closest('[data-option]');
-      if (b && !this.state.choice) { this.state.choice = b.dataset.option; Store.set(POLL.id, this.state); this.render(); toast('Vote enregistré, merci ! 🗳️'); }
+      if (b && !this.state.choice) Auth.require(() => { this.state.choice = b.dataset.option; Store.set(POLL.id, this.state); this.render(); toast('Vote enregistré, merci ! 🗳️'); }, 'Connectez-vous pour voter au sondage.');
       if (e.target.closest('[data-poll-reset]')) { this.state.choice = null; Store.set(POLL.id, this.state); this.render(); }
     });
     this.render();
@@ -727,7 +883,7 @@ const Enps = {
     this.vote = Store.get(this.key, null);
     $('#enps-card').addEventListener('click', e => {
       const b = e.target.closest('[data-score]');
-      if (b) { this.vote = +b.dataset.score; Store.set(this.key, this.vote); this.render(); toast('Merci pour votre réponse anonyme 🙏'); }
+      if (b) Auth.require(() => { this.vote = +b.dataset.score; Store.set(this.key, this.vote); this.render(); toast('Merci pour votre réponse anonyme 🙏'); }, 'Connectez-vous pour répondre au baromètre.');
       if (e.target.closest('[data-enps-reset]')) { this.vote = null; Store.set(this.key, null); this.render(); }
     });
     this.render();
@@ -924,7 +1080,7 @@ const Chat = {
     $('#chat-toggle').textContent = show ? '✕' : '💬';
     if (show && !this.started) {
       this.started = true;
-      this.bot('Bonjour Camille 👋 Je suis Léa, l\'assistante RH de SmartFactory. Posez-moi une question ou choisissez un sujet ci-dessous.');
+      this.bot(`Bonjour${Auth.user ? ' ' + Auth.user.firstName : ''} 👋 Je suis Léa, l\'assistante RH de SmartFactory. Posez-moi une question ou choisissez un sujet ci-dessous.`);
     }
     if (show && window.matchMedia('(min-width: 768px)').matches) $('#chat-input').focus();
   },
@@ -957,11 +1113,9 @@ const Chat = {
 
 /* ---------- 5. INITIALISATION ---------- */
 document.addEventListener('DOMContentLoaded', () => {
-  const h = new Date().getHours();
-  $('#greeting').textContent = `${h < 18 && h >= 5 ? 'Bonjour' : 'Bonsoir'} Camille 👋`;
-
   renderNav();
   Modal.init();
+  Auth.init();
   News.init();
   Faq.init();
   Ideas.init();
