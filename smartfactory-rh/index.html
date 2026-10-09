@@ -190,6 +190,7 @@
         <select id="dir-site" class="rounded-xl border border-slate-200 bg-white px-4 py-3"></select>
         <select id="dir-domain" class="rounded-xl border border-slate-200 bg-white px-4 py-3"></select>
       </div>
+      <p class="mb-3 text-xs text-slate-500" id="dir-count"></p>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="dir-list"></div>
     </section>
 
@@ -331,15 +332,35 @@ const DIRECTORY = [
   { name: 'Sophie Lambert', role: 'DRH Groupe', site: SITES[0], domain: 'Direction RH', phone: '01 47 20 10 00', email: 'sophie.lambert@smartfactory.fr', color: 'bg-rose-500' },
   { name: 'Thomas Nguyen', role: 'Responsable Paie & Rémunération', site: SITES[0], domain: 'Paie', phone: '01 47 20 10 12', email: 'thomas.nguyen@smartfactory.fr', color: 'bg-sky-500' },
   { name: 'Nadia Haddad', role: 'Chargée avantages sociaux', site: SITES[0], domain: 'Mutuelle & prévoyance', phone: '01 47 20 10 18', email: 'nadia.haddad@smartfactory.fr', color: 'bg-violet-500' },
+  { name: 'Antoine Leroy', role: 'Chef de projet transformation RH', site: SITES[0], domain: 'Conduite du changement', phone: '01 47 20 10 25', email: 'antoine.leroy@smartfactory.fr', color: 'bg-slate-600' },
+  { name: 'Claire Dubois', role: 'Responsable développement RH', site: SITES[0], domain: 'Formation', phone: '01 47 20 10 31', email: 'claire.dubois@smartfactory.fr', color: 'bg-amber-500' },
+  { name: 'Mehdi Bouzid', role: 'Juriste droit social', site: SITES[0], domain: 'Relations salariés', phone: '01 47 20 10 36', email: 'mehdi.bouzid@smartfactory.fr', color: 'bg-emerald-600' },
+  { name: 'Élodie Fontaine', role: 'Responsable recrutement & marque employeur', site: SITES[0], domain: 'Recrutement & mobilité', phone: '01 47 20 10 40', email: 'elodie.fontaine@smartfactory.fr', color: 'bg-orange-500' },
+  { name: 'Romain Chevalier', role: 'Responsable SIRH', site: SITES[0], domain: 'SIRH & outils digitaux', phone: '01 47 20 10 44', email: 'romain.chevalier@smartfactory.fr', color: 'bg-indigo-500' },
+  { name: 'Laura Mercier', role: 'Chargée de communication interne', site: SITES[0], domain: 'Communication interne', phone: '01 47 20 10 52', email: 'laura.mercier@smartfactory.fr', color: 'bg-pink-500' },
   { name: 'Karim Benali', role: 'RRH de site', site: SITES[1], domain: 'Relations salariés', phone: '04 72 50 30 01', email: 'karim.benali@smartfactory.fr', color: 'bg-emerald-500' },
   { name: 'Julie Moreau', role: 'Chargée de formation', site: SITES[1], domain: 'Formation', phone: '04 72 50 30 07', email: 'julie.moreau@smartfactory.fr', color: 'bg-amber-500' },
+  { name: 'Sébastien Roux', role: 'Gestionnaire paie', site: SITES[1], domain: 'Paie', phone: '04 72 50 30 11', email: 'sebastien.roux@smartfactory.fr', color: 'bg-sky-600' },
+  { name: 'Amandine Girard', role: 'Chargée de recrutement', site: SITES[1], domain: 'Recrutement & mobilité', phone: '04 72 50 30 14', email: 'amandine.girard@smartfactory.fr', color: 'bg-orange-500' },
+  { name: 'Yassine El Amrani', role: 'Responsable HSE', site: SITES[1], domain: 'Santé & sécurité', phone: '04 72 50 30 19', email: 'yassine.el-amrani@smartfactory.fr', color: 'bg-red-500' },
+  { name: 'Céline Bonnet', role: 'Assistante RH', site: SITES[1], domain: 'Administration du personnel', phone: '04 72 50 30 22', email: 'celine.bonnet@smartfactory.fr', color: 'bg-fuchsia-500' },
   { name: 'Marc Delattre', role: 'RRH de site', site: SITES[2], domain: 'Relations salariés', phone: '03 27 40 22 10', email: 'marc.delattre@smartfactory.fr', color: 'bg-teal-500' },
   { name: 'Aurélie Petit', role: 'Infirmière santé au travail', site: SITES[2], domain: 'Santé & sécurité', phone: '03 27 40 22 15', email: 'aurelie.petit@smartfactory.fr', color: 'bg-pink-500' },
+  { name: 'Julien Lefebvre', role: 'Chargé de formation', site: SITES[2], domain: 'Formation', phone: '03 27 40 22 18', email: 'julien.lefebvre@smartfactory.fr', color: 'bg-amber-600' },
+  { name: 'Sandrine Caron', role: 'Gestionnaire paie', site: SITES[2], domain: 'Paie', phone: '03 27 40 22 21', email: 'sandrine.caron@smartfactory.fr', color: 'bg-sky-500' },
+  { name: 'Kevin Dupuis', role: 'Chargé de recrutement & intérim', site: SITES[2], domain: 'Recrutement & mobilité', phone: '03 27 40 22 26', email: 'kevin.dupuis@smartfactory.fr', color: 'bg-orange-600' },
+  { name: 'Nathalie Lemaire', role: 'Assistante sociale', site: SITES[2], domain: 'Accompagnement social', phone: '03 27 40 22 30', email: 'nathalie.lemaire@smartfactory.fr', color: 'bg-violet-500' },
   { name: 'Lucas Fernandez', role: 'RRH de site', site: SITES[3], domain: 'Relations salariés', phone: '05 61 30 44 02', email: 'lucas.fernandez@smartfactory.fr', color: 'bg-indigo-500' },
   { name: 'Inès Rousseau', role: 'Chargée recrutement & mobilité', site: SITES[3], domain: 'Recrutement & mobilité', phone: '05 61 30 44 09', email: 'ines.rousseau@smartfactory.fr', color: 'bg-orange-500' },
+  { name: 'Émilie Faure', role: 'Gestionnaire paie', site: SITES[3], domain: 'Paie', phone: '05 61 30 44 13', email: 'emilie.faure@smartfactory.fr', color: 'bg-cyan-600' },
+  { name: 'Hugo Blanc', role: 'Responsable HSE', site: SITES[3], domain: 'Santé & sécurité', phone: '05 61 30 44 17', email: 'hugo.blanc@smartfactory.fr', color: 'bg-red-600' },
+  { name: 'Sarah Benhamou', role: 'Chargée de formation', site: SITES[3], domain: 'Formation', phone: '05 61 30 44 21', email: 'sarah.benhamou@smartfactory.fr', color: 'bg-yellow-600' },
+  { name: 'Olivier Marchand', role: 'Référent ambassadeurs digitaux', site: SITES[3], domain: 'Conduite du changement', phone: '05 61 30 44 25', email: 'olivier.marchand@smartfactory.fr', color: 'bg-slate-500' },
+  { name: 'Thi Mai Tran', role: 'RRH de site', site: SITES[4], domain: 'Relations salariés', phone: '02 38 60 11 01', email: 'thi.mai-tran@smartfactory.fr', color: 'bg-teal-600' },
   { name: 'Pierre Garnier', role: 'Gestionnaire administration du personnel', site: SITES[4], domain: 'Paie', phone: '02 38 60 11 03', email: 'pierre.garnier@smartfactory.fr', color: 'bg-cyan-600' },
   { name: 'Fatou Diallo', role: 'Référente QVT & handicap', site: SITES[4], domain: 'Santé & sécurité', phone: '02 38 60 11 08', email: 'fatou.diallo@smartfactory.fr', color: 'bg-lime-600' },
-  { name: 'Antoine Leroy', role: 'Chef de projet transformation RH', site: SITES[0], domain: 'Conduite du changement', phone: '01 47 20 10 25', email: 'antoine.leroy@smartfactory.fr', color: 'bg-slate-600' }
+  { name: 'David Morel', role: 'Chargé de recrutement & intérim', site: SITES[4], domain: 'Recrutement & mobilité', phone: '02 38 60 11 12', email: 'david.morel@smartfactory.fr', color: 'bg-orange-500' },
+  { name: 'Manon Perrin', role: 'Chargée de formation', site: SITES[4], domain: 'Formation', phone: '02 38 60 11 15', email: 'manon.perrin@smartfactory.fr', color: 'bg-amber-500' }
 ];
 
 const DEFAULT_IDEAS = [
@@ -781,6 +802,7 @@ const Directory = {
     const list = DIRECTORY.filter(p =>
       (!site || p.site === site) && (!domain || p.domain === domain) && (!q || normalize(`${p.name} ${p.role} ${p.domain}`).includes(q)));
 
+    $('#dir-count').textContent = `${list.length} interlocuteur${list.length > 1 ? 's' : ''} sur ${DIRECTORY.length}`;
     $('#dir-list').innerHTML = list.length ? list.map(p => {
       const initials = p.name.split(' ').map(w => w[0]).join('');
       return `
