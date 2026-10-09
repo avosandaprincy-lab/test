@@ -197,12 +197,19 @@
       <div class="mb-5 rounded-2xl bg-white p-5 shadow-sm" id="guides-progress"></div>
       <div class="grid gap-4 sm:grid-cols-2" id="guides-list"></div>
     </section>
+
+    <!-- ---------- 6. MES DEMANDES (congés) ---------- -->
+    <section data-view="leave" class="view hidden fade-in">
+      <h1 class="mb-1 text-2xl font-extrabold text-brand-700">Mes demandes</h1>
+      <p class="mb-4 text-sm text-slate-500">Posez vos congés et suivez leur validation.</p>
+      <div id="leave-view"></div>
+    </section>
   </main>
 </div>
 
 <!-- ===== BOTTOM NAVIGATION (mobile) ===== -->
 <nav class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden" aria-label="Navigation mobile">
-  <ul class="grid grid-cols-5" id="bottom-nav"></ul>
+  <ul class="grid grid-cols-6" id="bottom-nav"></ul>
 </nav>
 
 <!-- ===== MODALE ARTICLE ===== -->
@@ -394,7 +401,9 @@ const GUIDES = [
 
 const CHATBOT = [
   { keys: ['conge', 'cp', 'vacance', 'absence', 'rtt'], label: '🏖️ Mes congés',
-    answer: 'Vous disposez de <b>25 jours de congés payés</b> par an (+ RTT selon votre statut). Pour poser un congé : onglet « Mes demandes » → « Nouvelle absence ». Votre manager valide sous 72 h. Votre solde actuel : <b>14,5 jours CP</b> et <b>6 jours RTT</b>.' },
+    answer: () => `Vous disposez de <b>25 jours de congés payés</b> par an (+ RTT selon votre statut). Votre responsable valide sous 72 h.
+      ${Auth.user ? `Votre solde actuel : <b>${fmtDays(Leave.available('CP'))} de CP</b> et <b>${fmtDays(Leave.available('RTT'))} de RTT</b>.` : 'Connectez-vous pour voir votre solde.'}
+      <button onclick="showTab('leave'); Chat.toggle(false)" class="mt-2 block rounded-lg bg-brand-600 px-3 py-2 font-semibold text-white">🗓️ Faire une demande</button>` },
   { keys: ['paie', 'salaire', 'bulletin', 'virement', 'fiche'], label: '💶 Ma paie',
     answer: 'Le salaire est versé le <b>dernier jour ouvré du mois</b>. Votre bulletin est disponible 2 jours avant dans votre coffre-fort numérique. Pour une question précise, contactez <b>Thomas Nguyen</b> (Paie) au 01 47 20 10 12.' },
   { keys: ['mutuelle', 'sante', 'remboursement', 'prevoyance', 'optique', 'dentaire'], label: '🩺 Ma mutuelle',
@@ -408,14 +417,17 @@ const CHATBOT = [
    jamais de mots de passe écrits dans le code de la page. */
 const USERS = [
   { matricule: 'SF10234', email: 'camille.martin@smartfactory.fr', password: 'Usine2026!',
-    firstName: 'Camille', lastName: 'Martin', job: 'Technicienne maintenance', site: 'Lyon' },
+    firstName: 'Camille', lastName: 'Martin', job: 'Technicienne maintenance', site: 'Lyon',
+    manager: 'SF00001', balances: { CP: 14.5, RTT: 6 } },
   { matricule: 'SF00001', email: 'sophie.lambert@smartfactory.fr', password: 'DRH2026!',
-    firstName: 'Sophie', lastName: 'Lambert', job: 'DRH Groupe', site: 'Siège' }
+    firstName: 'Sophie', lastName: 'Lambert', job: 'DRH Groupe', site: 'Siège',
+    manager: null, balances: { CP: 22, RTT: 9 } }
 ];
 
 /* ---------- 3. NAVIGATION ---------- */
 const TABS = [
   { id: 'news', label: 'Actus', full: 'Actualités', icon: '📰' },
+  { id: 'leave', label: 'Demandes', full: 'Mes demandes', icon: '🗓️' },
   { id: 'faq', label: 'FAQ', full: 'FAQ RH', icon: '❓' },
   { id: 'ideas', label: 'Participer', full: 'Idées & sondages', icon: '💡' },
   { id: 'directory', label: 'Annuaire', full: 'Annuaire RH', icon: '👥' },
@@ -424,8 +436,8 @@ const TABS = [
 
 function renderNav() {
   $('#bottom-nav').innerHTML = TABS.map(t => `
-    <li><button data-tab="${t.id}" class="nav-btn flex w-full flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium text-slate-500">
-      <span class="grid h-8 w-12 place-items-center rounded-full text-xl transition-colors">${t.icon}</span>${t.label}
+    <li><button data-tab="${t.id}" class="nav-btn flex w-full flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium text-slate-500">
+      <span class="grid h-8 w-11 place-items-center rounded-full text-xl transition-colors">${t.icon}</span>${t.label}
     </button></li>`).join('');
 
   $('#side-nav').innerHTML = TABS.map(t => `
@@ -538,6 +550,7 @@ const News = {
 const Auth = {
   user: null,
   pending: null, // action à reprendre après connexion (ex : un vote)
+  listeners: [], // modules à rafraîchir quand on se connecte / déconnecte
 
   init() {
     // « Se souvenir de moi » → localStorage ; sinon → sessionStorage (fermé avec l'onglet)
@@ -677,6 +690,7 @@ const Auth = {
 
     const h = new Date().getHours();
     $('#greeting').textContent = `${h < 18 && h >= 5 ? 'Bonjour' : 'Bonsoir'}${u ? ' ' + u.firstName : ''} 👋`;
+    this.listeners.forEach(fn => fn());
   }
 };
 
@@ -1050,6 +1064,281 @@ const Guides = {
   }
 };
 
+/* ---------- 4i. MES DEMANDES (congés) ---------- */
+const LEAVE_TYPES = [
+  { id: 'CP', label: 'Congés payés', icon: '🏖️', balance: true },
+  { id: 'RTT', label: 'RTT', icon: '⏱️', balance: true },
+  { id: 'FAM', label: 'Événement familial (mariage, naissance, décès…)', short: 'Événement familial', icon: '👪', balance: false },
+  { id: 'SS', label: 'Congé sans solde', short: 'Sans solde', icon: '📄', balance: false }
+];
+const LEAVE_STATUS = {
+  pending:   { label: 'En attente', cls: 'bg-amber-50 text-amber-700' },
+  approved:  { label: 'Validée', cls: 'bg-emerald-50 text-emerald-700' },
+  refused:   { label: 'Refusée', cls: 'bg-rose-50 text-rose-700' },
+  cancelled: { label: 'Annulée', cls: 'bg-slate-100 text-slate-500' }
+};
+
+// Dates "AAAA-MM-JJ" manipulées en heure locale (évite les décalages de fuseau)
+const DateUtil = {
+  parse: (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); },
+  iso: (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+  addDays: (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n),
+  fmt: (s, opts = { weekday: 'short', day: 'numeric', month: 'short' }) => DateUtil.parse(s).toLocaleDateString('fr-FR', opts),
+
+  // Jours fériés français (dates fixes + Lundi de Pâques, Ascension, Lundi de Pentecôte)
+  holidays: {},
+  holidaysOf(year) {
+    if (this.holidays[year]) return this.holidays[year];
+    // Calcul de Pâques (algorithme de Meeus/Jones/Butcher)
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const easter = new Date(year, Math.floor((h + l - 7 * m + 114) / 31) - 1, ((h + l - 7 * m + 114) % 31) + 1);
+    const list = ['01-01', '05-01', '05-08', '07-14', '08-15', '11-01', '11-11', '12-25'].map(md => `${year}-${md}`);
+    [1, 39, 50].forEach(n => list.push(this.iso(this.addDays(easter, n))));
+    return (this.holidays[year] = new Set(list));
+  },
+  isWorkingDay(d) {
+    const day = d.getDay();
+    return day !== 0 && day !== 6 && !this.holidaysOf(d.getFullYear()).has(this.iso(d));
+  },
+  nextWorkingDay(from = new Date()) {
+    let d = this.addDays(new Date(from.getFullYear(), from.getMonth(), from.getDate()), 1);
+    while (!this.isWorkingDay(d)) d = this.addDays(d, 1);
+    return d;
+  }
+};
+
+// Pluriel à partir de 2 (règle française : « 1,5 jour », « 2 jours »)
+const fmtDays = (n) => `${n.toLocaleString('fr-FR')} jour${Math.abs(n) >= 2 ? 's' : ''}`;
+
+const Leave = {
+  requests: Store.get('leave-requests', []),
+
+  init() {
+    const view = $('#leave-view');
+    view.addEventListener('input', e => { if (e.target.closest('#leave-form')) this.updateSummary(); });
+    view.addEventListener('submit', e => {
+      if (e.target.getAttribute('id') !== 'leave-form') return;
+      e.preventDefault();
+      this.submit(e.target);
+    });
+    view.addEventListener('click', e => {
+      if (e.target.closest('[data-login]')) Auth.openLogin('Connectez-vous pour faire une demande.');
+      const cancel = e.target.closest('[data-cancel]');
+      if (cancel && confirm('Annuler cette demande ?')) this.setStatus(+cancel.dataset.cancel, 'cancelled');
+      const decide = e.target.closest('[data-decide]');
+      if (decide) this.setStatus(+decide.dataset.id, decide.dataset.decide);
+    });
+    Auth.listeners.push(() => this.render());
+    this.render();
+  },
+
+  save() { Store.set('leave-requests', this.requests); },
+  mine() { return this.requests.filter(r => r.matricule === Auth.user?.matricule); },
+
+  // Solde disponible = solde initial − demandes en attente ou validées
+  available(type, user = Auth.user) {
+    if (!user) return 0;
+    const used = this.requests
+      .filter(r => r.matricule === user.matricule && r.type === type && ['pending', 'approved'].includes(r.status))
+      .reduce((s, r) => s + r.days, 0);
+    return (user.balances?.[type] ?? 0) - used;
+  },
+
+  // Nombre de jours ouvrés entre deux dates, demi-journées comprises
+  countDays(start, end, startPm, endAm) {
+    if (!start || !end) return 0;
+    const s = DateUtil.parse(start), e = DateUtil.parse(end);
+    if (e < s) return 0;
+    let days = 0;
+    for (let d = s; d <= e; d = DateUtil.addDays(d, 1)) if (DateUtil.isWorkingDay(d)) days++;
+    if (startPm && DateUtil.isWorkingDay(s)) days -= 0.5;
+    if (endAm && DateUtil.isWorkingDay(e)) days -= 0.5;
+    return Math.max(days, 0);
+  },
+
+  readForm(form) {
+    const fd = new FormData(form);
+    const r = {
+      type: fd.get('type'), start: fd.get('start'), end: fd.get('end'),
+      startPm: fd.get('startPm') === 'on', endAm: fd.get('endAm') === 'on', comment: (fd.get('comment') || '').trim()
+    };
+    r.days = this.countDays(r.start, r.end, r.startPm, r.endAm);
+    return r;
+  },
+
+  // Renvoie un message d'erreur, ou null si la demande est valide
+  validate(r) {
+    const today = DateUtil.iso(new Date());
+    if (!r.start || !r.end) return 'Indiquez les dates de début et de fin.';
+    if (r.start < today) return 'La date de début est déjà passée.';
+    if (r.end < r.start) return 'La date de fin est avant la date de début.';
+    if (r.start === r.end && r.startPm && r.endAm) return 'Une même journée ne peut pas commencer l\'après-midi et finir à midi.';
+    if (r.days <= 0) return 'Cette période ne contient aucun jour ouvré (week-end ou jour férié).';
+    const type = LEAVE_TYPES.find(t => t.id === r.type);
+    if (type.balance && r.days > this.available(r.type)) return `Solde ${type.label} insuffisant : ${fmtDays(this.available(r.type))} disponible(s).`;
+    if (r.type === 'FAM' && !r.comment) return 'Précisez l\'événement familial dans le commentaire.';
+    const overlap = this.mine().find(o => ['pending', 'approved'].includes(o.status) && o.start <= r.end && r.start <= o.end);
+    if (overlap) return `Vous avez déjà une demande du ${DateUtil.fmt(overlap.start)} au ${DateUtil.fmt(overlap.end)} sur cette période.`;
+    return null;
+  },
+
+  updateSummary() {
+    const form = $('#leave-form');
+    if (!form) return;
+    const r = this.readForm(form);
+    if (r.end < r.start && r.start) { form.end.value = r.start; return this.updateSummary(); }
+    form.end.min = r.start;
+    const type = LEAVE_TYPES.find(t => t.id === r.type);
+    const error = r.start && r.end ? this.validate(r) : null;
+    const after = type.balance ? this.available(r.type) - r.days : null;
+    $('#leave-summary').innerHTML = `
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-sm text-slate-600">Durée décomptée</span>
+        <span class="text-2xl font-extrabold text-brand-700">${fmtDays(r.days)}</span>
+      </div>
+      ${r.start && r.end ? `<p class="text-sm text-slate-500">Du ${DateUtil.fmt(r.start)}${r.startPm ? ' (après-midi)' : ''} au ${DateUtil.fmt(r.end)}${r.endAm ? ' (midi)' : ''} · jours ouvrés, hors week-ends et jours fériés</p>` : ''}
+      ${after !== null ? `<p class="mt-1 text-sm ${after < 0 ? 'font-semibold text-rose-600' : 'text-slate-500'}">Solde ${type.label} après la demande : <b>${fmtDays(after)}</b></p>` : ''}
+      ${error ? `<p class="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700" role="alert">${error}</p>` : ''}`;
+    $('#leave-submit').disabled = !!error || r.days <= 0;
+  },
+
+  submit(form) {
+    const r = this.readForm(form);
+    const error = this.validate(r);
+    if (error) return this.updateSummary();
+    const u = Auth.user;
+    this.requests.push({ id: Date.now(), matricule: u.matricule, name: `${u.firstName} ${u.lastName}`, ...r, status: 'pending', createdAt: DateUtil.iso(new Date()) });
+    this.save();
+    this.render();
+    const manager = USERS.find(m => m.matricule === u.manager);
+    toast(`Demande envoyée${manager ? ' à ' + manager.firstName + ' ' + manager.lastName : ''} ✅`);
+  },
+
+  setStatus(id, status) {
+    const r = this.requests.find(x => x.id === id);
+    if (!r) return;
+    r.status = status;
+    r.decidedBy = status === 'cancelled' ? null : `${Auth.user.firstName} ${Auth.user.lastName}`;
+    this.save();
+    this.render();
+    toast({ cancelled: 'Demande annulée', approved: 'Demande validée ✅', refused: 'Demande refusée' }[status]);
+  },
+
+  card(r, actions = '') {
+    const t = LEAVE_TYPES.find(x => x.id === r.type);
+    const st = LEAVE_STATUS[r.status];
+    return `
+      <div class="fade-in rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-bold">${t.icon} ${t.short || t.label} · ${fmtDays(r.days)}</p>
+            <p class="text-sm text-slate-600">Du ${DateUtil.fmt(r.start)}${r.startPm ? ' (ap.-midi)' : ''} au ${DateUtil.fmt(r.end)}${r.endAm ? ' (midi)' : ''}</p>
+          </div>
+          <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${st.cls}">${st.label}</span>
+        </div>
+        ${r.comment ? `<p class="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">💬 ${escapeHtml(r.comment)}</p>` : ''}
+        <p class="mt-2 text-xs text-slate-400">Envoyée le ${DateUtil.fmt(r.createdAt, { day: 'numeric', month: 'long' })}${r.decidedBy ? ` · décision : ${escapeHtml(r.decidedBy)}` : ''}</p>
+        ${actions}
+      </div>`;
+  },
+
+  render() {
+    const view = $('#leave-view');
+    const u = Auth.user;
+    if (!u) {
+      view.innerHTML = `
+        <div class="rounded-2xl bg-white p-8 text-center shadow-sm">
+          <p class="text-5xl">🔐</p>
+          <h2 class="mt-3 text-lg font-bold">Connectez-vous pour accéder à vos demandes</h2>
+          <p class="mt-1 text-sm text-slate-500">Consultez vos soldes, posez vos congés et suivez leur validation.</p>
+          <button data-login class="mt-5 rounded-xl bg-brand-600 px-6 py-3.5 font-semibold text-white hover:bg-brand-700">Se connecter</button>
+        </div>`;
+      return;
+    }
+
+    const mine = this.mine().sort((a, b) => b.id - a.id);
+    const pendingCount = mine.filter(r => r.status === 'pending').length;
+    const team = this.requests.filter(r => r.status === 'pending' && USERS.find(x => x.matricule === r.matricule)?.manager === u.matricule);
+    const start = DateUtil.iso(DateUtil.nextWorkingDay());
+
+    view.innerHTML = `
+      <!-- Soldes -->
+      <div class="mb-4 grid grid-cols-3 gap-3">
+        ${['CP', 'RTT'].map(id => `
+          <div class="rounded-2xl bg-white p-4 shadow-sm">
+            <p class="text-xs font-semibold uppercase text-slate-500">${id === 'CP' ? 'Congés payés' : 'RTT'}</p>
+            <p class="mt-1 text-2xl font-extrabold text-brand-700">${this.available(id).toLocaleString('fr-FR')}<span class="text-sm font-semibold text-slate-400"> j</span></p>
+          </div>`).join('')}
+        <div class="rounded-2xl bg-white p-4 shadow-sm">
+          <p class="text-xs font-semibold uppercase text-slate-500">En attente</p>
+          <p class="mt-1 text-2xl font-extrabold text-amber-600">${pendingCount}</p>
+        </div>
+      </div>
+
+      ${team.length ? `
+      <!-- Validation manager -->
+      <div class="mb-4 rounded-2xl bg-brand-50 p-4 ring-1 ring-brand-100">
+        <h2 class="mb-3 text-lg font-bold text-brand-700">✅ À valider (${team.length})</h2>
+        <div class="space-y-3">
+          ${team.map(r => this.card(r, `
+            <p class="mt-2 text-sm font-semibold">👤 ${escapeHtml(r.name)}</p>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button data-decide="refused" data-id="${r.id}" class="rounded-xl border-2 border-rose-200 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50">Refuser</button>
+              <button data-decide="approved" data-id="${r.id}" class="rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700">Valider</button>
+            </div>`)).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="grid gap-4 lg:grid-cols-2">
+        <!-- Formulaire -->
+        <form id="leave-form" method="post" action="javascript:void(0)" class="h-fit rounded-2xl bg-white p-5 shadow-sm" novalidate>
+          <h2 class="mb-4 text-lg font-bold">🗓️ Nouvelle demande de congé</h2>
+          <label class="mb-3 block">
+            <span class="mb-1 block text-sm font-medium">Type d'absence</span>
+            <select name="type" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
+              ${LEAVE_TYPES.map(t => `<option value="${t.id}">${t.icon} ${t.label}${t.balance ? ` (${this.available(t.id).toLocaleString('fr-FR')} j dispo.)` : ''}</option>`).join('')}
+            </select>
+          </label>
+          <div class="mb-3 grid grid-cols-2 gap-3">
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Du</span>
+              <input type="date" name="start" value="${start}" min="${DateUtil.iso(new Date())}" required
+                     class="w-full rounded-xl border border-slate-200 px-3 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Au</span>
+              <input type="date" name="end" value="${start}" min="${start}" required
+                     class="w-full rounded-xl border border-slate-200 px-3 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+            </label>
+            <label class="flex min-h-[44px] items-center gap-2 text-sm"><input type="checkbox" name="startPm" class="h-5 w-5 accent-brand-600" /> Commence l'après-midi</label>
+            <label class="flex min-h-[44px] items-center gap-2 text-sm"><input type="checkbox" name="endAm" class="h-5 w-5 accent-brand-600" /> Finit à midi</label>
+          </div>
+          <label class="mb-3 block">
+            <span class="mb-1 block text-sm font-medium">Commentaire <span class="font-normal text-slate-400">(facultatif, sauf événement familial)</span></span>
+            <textarea name="comment" rows="2" maxlength="300" placeholder="Ex : mariage de ma sœur, vacances d'été…"
+                      class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></textarea>
+          </label>
+          <div id="leave-summary" class="mb-4 rounded-xl bg-slate-50 p-4" aria-live="polite"></div>
+          <button id="leave-submit" class="w-full rounded-xl bg-brand-600 py-3.5 text-base font-semibold text-white shadow hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40">Envoyer ma demande</button>
+          <p class="mt-2 text-center text-xs text-slate-400">${(() => { const m = USERS.find(x => x.matricule === u.manager); return m ? `Validation par ${m.firstName} ${m.lastName} sous 72 h` : 'Validation par votre responsable sous 72 h'; })()}</p>
+        </form>
+
+        <!-- Historique -->
+        <div>
+          <h2 class="mb-3 text-lg font-bold">Mes demandes</h2>
+          <div class="space-y-3">
+            ${mine.length ? mine.map(r => this.card(r, r.status === 'pending'
+              ? `<button data-cancel="${r.id}" class="mt-3 w-full rounded-xl border-2 border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Annuler la demande</button>` : '')).join('')
+            : `<p class="rounded-2xl bg-white p-6 text-center text-sm text-slate-500 shadow-sm">Aucune demande pour le moment.<br>Remplissez le formulaire pour poser votre premier congé.</p>`}
+          </div>
+        </div>
+      </div>`;
+    this.updateSummary();
+  }
+};
+
 /* ---------- 4h. CHATBOT RH ---------- */
 const Chat = {
   started: false,
@@ -1103,7 +1392,7 @@ const Chat = {
     const match = CHATBOT.find(c => c.keys.some(k => q.includes(k)));
     setTimeout(() => {
       typing.remove();
-      if (match) this.bot(match.answer);
+      if (match) this.bot(typeof match.answer === 'function' ? match.answer() : match.answer);
       else if (/bonjour|salut|hello|coucou/.test(q)) this.bot('Bonjour ! Je peux vous renseigner sur les congés, la paie, la mutuelle ou le télétravail 😊');
       else if (/merci/.test(q)) this.bot('Avec plaisir ! Bonne journée 🌞');
       else this.bot('Je n\'ai pas encore la réponse à cette question 🤔. Consultez la <b>FAQ RH</b> ou contactez le RRH de votre site via l\'<b>Annuaire</b>. Je transmets aussi votre question à l\'équipe RH.');
@@ -1123,6 +1412,7 @@ document.addEventListener('DOMContentLoaded', () => {
   Enps.init();
   Directory.init();
   Guides.init();
+  Leave.init();
   Chat.init();
 
   showTab(location.hash.slice(1));

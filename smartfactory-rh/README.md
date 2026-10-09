@@ -9,6 +9,7 @@ Double-cliquez sur `index.html` : il s'ouvre dans votre navigateur. Une connexio
 | Onglet | Contenu |
 |---|---|
 | 📰 Actus | Fil d'actualités filtrable (Politiques RH, Vie d'entreprise, Sites de production), cartes cliquables (lecture en modale), « J'aime » |
+| 🗓️ Demandes | Demande de congé (CP, RTT, événement familial, sans solde). Les jours ouvrés sont calculés automatiquement, hors week-ends et jours fériés français, demi-journées comprises. Le solde est vérifié, ainsi que les chevauchements. Historique avec annulation. Le responsable valide ou refuse les demandes. |
 | ❓ FAQ | Recherche en temps réel (insensible aux accents, mots surlignés), accordéons |
 | 💡 Participer | Baromètre eNPS (note 0–10, score calculé), sondage avec barres de résultats animées, boîte à idées (formulaire + votes +1, tri) |
 | 👥 Annuaire | Cartes des interlocuteurs RH, filtres par site, expertise et nom, boutons Appeler / E-mail |
@@ -26,6 +27,7 @@ Le bouton **Se connecter**, en haut à droite, ouvre la fenêtre de connexion. O
 - Sans connexion, on peut lire les actualités, la FAQ, l'annuaire et les guides.
 - Aimer un article, voter, proposer une idée ou répondre au sondage et au baromètre demande d'être connecté. L'action reprend automatiquement après la connexion.
 - « Se souvenir de moi » garde la session sur l'appareil. Sinon, elle s'arrête à la fermeture de l'onglet.
+- Démonstration de validation : posez un congé avec Camille, déconnectez-vous, connectez-vous avec Sophie (sa responsable), puis validez la demande dans l'onglet Demandes.
 - Pour ajouter un compte, ajoutez-le à la liste `USERS` dans `index.html`.
 
 ⚠️ **C'est une simulation**, pas une vraie sécurité : les mots de passe sont lisibles dans le code de la page. Avant une utilisation réelle, branchez une vraie authentification côté serveur, par exemple le SSO de l'entreprise (Microsoft Entra ID / Azure AD), ou l'authentification Netlify (Identity) pour un pilote.
